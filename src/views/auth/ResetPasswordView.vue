@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Subscription } from '@supabase/supabase-js'
 
-import ResetPasswordCard from '@/components/ResetPasswordCard.vue'
+import ResetPasswordCard from '@/components/auth/ResetPasswordCard.vue'
 import { getSession, onAuthStateChange } from '@/lib/auth'
 
 type RecoveryState = 'loading' | 'ready' | 'success' | 'error'
@@ -96,7 +96,7 @@ onUnmounted(() => {
             <path d="M16 17H8" />
             <path d="M10 9H8" />
           </svg>
-          <span class="text-3xl font-semibold">MarkdownPro</span>
+          <span class="text-3xl font-semibold">MarkDocs</span>
         </RouterLink>
       </div>
 

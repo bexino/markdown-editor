@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SignInCard from '@/components/SignInCard.vue'
+import RegisterCard from '@/components/auth/RegisterCard.vue'
 </script>
 
 <template>
@@ -28,11 +28,11 @@ import SignInCard from '@/components/SignInCard.vue'
             <path d="M16 17H8" />
             <path d="M10 9H8" />
           </svg>
-          <span class="text-3xl font-semibold">MarkdownPro</span>
+          <span class="text-3xl font-semibold">MarkDocs</span>
         </RouterLink>
       </div>
 
-      <SignInCard />
+      <RegisterCard />
 
       <div class="mt-4 text-center">
         <RouterLink
