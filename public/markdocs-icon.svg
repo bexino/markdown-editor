@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path
+    d="M18 6h19.5L50 18.5V50a8 8 0 0 1-8 8H18a8 8 0 0 1-8-8V14a8 8 0 0 1 8-8Z"
+    fill="url(#markdocs-sheet)"
+  />
+  <path
+    d="M37.5 6V15a3.5 3.5 0 0 0 3.5 3.5H50"
+    fill="url(#markdocs-fold)"
+  />
+  <path
+    d="M37.5 6V15a3.5 3.5 0 0 0 3.5 3.5H50"
+    stroke="#DFFFF4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity=".5"
+    stroke-width="2"
+  />
+  <path
+    d="m19 43 7.5-16 5.5 10.75L37.5 24 45 43"
+    stroke="url(#markdocs-mark)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="6"
+  />
+  <defs>
+    <linearGradient id="markdocs-sheet" x1="13" x2="51" y1="10" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4AE4A8" />
+      <stop offset="1" stop-color="#008D5F" />
+    </linearGradient>
+    <linearGradient id="markdocs-fold" x1="39" x2="49" y1="8" y2="19" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C9FFE8" />
+      <stop offset="1" stop-color="#88F7C9" />
+    </linearGradient>
+    <linearGradient id="markdocs-mark" x1="20" x2="44" y1="25" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#053321" />
+      <stop offset="1" stop-color="#D8FFF0" />
+    </linearGradient>
+  </defs>
+</svg>
