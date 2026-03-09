@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BenefitCard from '@/components/BenefitCard.vue'
 import { useRouter } from 'vue-router'
 
 import FeatureCard from '@/components/FeatureCard.vue'
@@ -241,25 +242,12 @@ async function navigateTo(path: string): Promise<void> {
           <div>
             <h2 class="mb-6 text-3xl font-bold md:text-4xl">Why Choose MarkdownPro?</h2>
             <div class="space-y-4">
-              <div v-for="benefit in benefits" :key="benefit.title" class="flex gap-3">
-                <svg
-                  class="mt-0.5 size-6 shrink-0 text-primary"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M9 12l2 2 4-4" />
-                  <circle cx="12" cy="12" r="10" />
-                </svg>
-                <div>
-                  <h3 class="mb-1 font-semibold">{{ benefit.title }}</h3>
-                  <p class="text-muted-foreground">{{ benefit.description }}</p>
-                </div>
-              </div>
+              <BenefitCard
+                v-for="benefit in benefits"
+                :key="benefit.title"
+                :title="benefit.title"
+                :description="benefit.description"
+              />
             </div>
           </div>
 
