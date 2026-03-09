@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AuthCallbackView from '@/views/AuthCallbackView.vue'
 import DocumentsView from '@/views/DocumentsView.vue'
 import LandingView from '@/views/LandingView.vue'
 import RegisterView from '@/views/RegisterView.vue'
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/documents',
       name: 'documents',
       component: DocumentsView,
+    },
+    {
+      path: '/auth/callback',
+      name: 'auth-callback',
+      component: AuthCallbackView,
     },
   ],
 })

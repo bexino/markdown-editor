@@ -23,6 +23,14 @@ export interface RegisterCredentials extends AuthCredentials {
 
 export type AuthStateChangeCallback = (event: AuthChangeEvent, session: Session | null) => void
 
+export function getAuthCallbackUrl(): string | undefined {
+  if (typeof window === 'undefined') {
+    return undefined
+  }
+
+  return new URL('auth/callback', window.location.origin + import.meta.env.BASE_URL).toString()
+}
+
 export async function register({
   email,
   password,
@@ -38,7 +46,7 @@ export async function register({
         full_name: fullName,
         username,
       },
-      emailRedirectTo: options?.emailRedirectTo,
+      emailRedirectTo: options?.emailRedirectTo ?? getAuthCallbackUrl(),
     },
   })
 }

@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { register } from '@/lib/auth'
+import { getAuthCallbackUrl, register } from '@/lib/auth'
 import {
   FULL_NAME_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -62,6 +62,9 @@ async function handleSubmit(): Promise<void> {
     password: formData.password,
     fullName: formData.fullName.trim(),
     username: formData.username.trim(),
+    options: {
+      emailRedirectTo: getAuthCallbackUrl(),
+    },
   })
   const identitiesCount = data.user?.identities?.length
 
