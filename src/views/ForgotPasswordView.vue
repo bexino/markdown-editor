@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ForgotPasswordCard from '@/components/ForgotPasswordCard.vue'
+import ForgotPasswordCard from '@/components/auth/ForgotPasswordCard.vue'
 </script>
 
 <template>

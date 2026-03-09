@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Subscription } from '@supabase/supabase-js'
 
-import ResetPasswordCard from '@/components/ResetPasswordCard.vue'
+import ResetPasswordCard from '@/components/auth/ResetPasswordCard.vue'
 import { getSession, onAuthStateChange } from '@/lib/auth'
 
 type RecoveryState = 'loading' | 'ready' | 'success' | 'error'

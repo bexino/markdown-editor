@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SignInCard from '@/components/SignInCard.vue'
+import SignInCard from '@/components/auth/SignInCard.vue'
 </script>
 
 <template>
