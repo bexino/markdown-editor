@@ -35,7 +35,7 @@ async function navigateTo(path: string): Promise<void> {
             <path d="M16 17H8" />
             <path d="M10 9H8" />
           </svg>
-          <span class="text-2xl font-bold">MarkdownPro</span>
+          <span class="text-2xl font-bold">MarkDocs</span>
         </div>
 
         <div class="flex gap-3">
@@ -240,7 +240,7 @@ async function navigateTo(path: string): Promise<void> {
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
-            <h2 class="mb-6 text-3xl font-bold md:text-4xl">Why Choose MarkdownPro?</h2>
+            <h2 class="mb-6 text-3xl font-bold md:text-4xl">Why Choose MarkDocs?</h2>
             <div class="space-y-4">
               <BenefitCard
                 v-for="benefit in benefits"
@@ -277,7 +277,7 @@ async function navigateTo(path: string): Promise<void> {
       <div class="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <h2 class="mb-4 text-3xl font-bold md:text-4xl">Ready to Start Writing?</h2>
         <p class="mb-8 text-lg opacity-90">
-          Join thousands of writers using MarkdownPro to create beautiful documents
+          Join thousands of writers using MarkDocs to create beautiful documents
         </p>
         <button
           type="button"
@@ -322,9 +322,9 @@ async function navigateTo(path: string): Promise<void> {
               <path d="M16 17H8" />
               <path d="M10 9H8" />
             </svg>
-            <span class="font-semibold">MarkdownPro</span>
+            <span class="font-semibold">MarkDocs</span>
           </div>
-          <p class="text-sm text-muted-foreground">© 2026 MarkdownPro. All rights reserved.</p>
+          <p class="text-sm text-muted-foreground">© 2026 MarkDocs. All rights reserved.</p>
         </div>
       </div>
     </footer>

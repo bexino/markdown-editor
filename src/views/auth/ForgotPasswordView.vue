@@ -28,7 +28,7 @@ import ForgotPasswordCard from '@/components/auth/ForgotPasswordCard.vue'
             <path d="M16 17H8" />
             <path d="M10 9H8" />
           </svg>
-          <span class="text-3xl font-semibold">MarkdownPro</span>
+          <span class="text-3xl font-semibold">MarkDocs</span>
         </RouterLink>
       </div>
 
