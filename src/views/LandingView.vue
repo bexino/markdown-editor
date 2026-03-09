@@ -1,61 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
+import FeatureCard from '@/components/FeatureCard.vue'
+import { benefits, featureCards } from '@/data/landing'
+
 const router = useRouter()
-
-const featureCards = [
-  {
-    title: 'Live Preview',
-    description:
-      'See your formatted content in real-time as you type with our split-pane editor layout.',
-    icon: 'eye',
-  },
-  {
-    title: 'Syntax Highlighting',
-    description:
-      'Beautiful code blocks with syntax highlighting for all popular programming languages.',
-    icon: 'code',
-  },
-  {
-    title: 'Keyboard Shortcuts',
-    description: 'Work faster with powerful keyboard shortcuts for common formatting actions.',
-    icon: 'zap',
-  },
-  {
-    title: 'Auto-Save',
-    description: 'Never lose your work with automatic saving and local storage persistence.',
-    icon: 'save',
-  },
-  {
-    title: 'Responsive Design',
-    description: 'Optimized for all devices - write on desktop, tablet, or mobile with ease.',
-    icon: 'smartphone',
-  },
-  {
-    title: 'Document Management',
-    description: 'Create, organize, and manage all your markdown documents in one place.',
-    icon: 'file-text',
-  },
-] as const
-
-const benefits = [
-  {
-    title: 'Clean, Distraction-Free Interface',
-    description: 'Focus on your writing with our minimalist, intuitive design',
-  },
-  {
-    title: 'GitHub Flavored Markdown',
-    description: 'Full support for tables, task lists, and all GFM features',
-  },
-  {
-    title: 'Export Your Work',
-    description: 'Copy rendered HTML or save as markdown files',
-  },
-  {
-    title: 'Free Forever',
-    description: 'No subscriptions, no hidden fees. Just powerful markdown editing',
-  },
-] as const
 
 async function navigateTo(path: string): Promise<void> {
   await router.push(path)
@@ -186,12 +135,13 @@ async function navigateTo(path: string): Promise<void> {
         </div>
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <article
+          <FeatureCard
             v-for="feature in featureCards"
             :key="feature.title"
-            class="rounded-xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-lg"
+            :title="feature.title"
+            :description="feature.description"
           >
-            <div class="mb-4 flex size-12 items-center justify-center rounded-lg bg-primary/10">
+            <template #icon>
               <svg
                 v-if="feature.icon === 'eye'"
                 class="size-6 text-primary"
@@ -279,10 +229,8 @@ async function navigateTo(path: string): Promise<void> {
                 <path d="M16 17H8" />
                 <path d="M10 9H8" />
               </svg>
-            </div>
-            <h3 class="mb-2 text-xl font-semibold">{{ feature.title }}</h3>
-            <p class="text-muted-foreground">{{ feature.description }}</p>
-          </article>
+            </template>
+          </FeatureCard>
         </div>
       </div>
     </section>
