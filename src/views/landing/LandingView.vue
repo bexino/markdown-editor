@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import BenefitCard from '@/components/marketing/BenefitCard.vue'
+import BenefitCard from '@/components/landing/BenefitCard.vue'
 import { useRouter } from 'vue-router'
 
-import FeatureCard from '@/components/marketing/FeatureCard.vue'
+import FeatureCard from '@/components/landing/FeatureCard.vue'
 import { benefits, featureCards } from '@/data/landing'
 
 const router = useRouter()
