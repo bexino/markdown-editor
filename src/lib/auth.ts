@@ -23,12 +23,20 @@ export interface RegisterCredentials extends AuthCredentials {
 
 export type AuthStateChangeCallback = (event: AuthChangeEvent, session: Session | null) => void
 
-export function getAuthCallbackUrl(): string | undefined {
+function getAuthRedirectUrl(path: string): string | undefined {
   if (typeof window === 'undefined') {
     return undefined
   }
 
-  return new URL('auth/callback', window.location.origin + import.meta.env.BASE_URL).toString()
+  return new URL(path, window.location.origin + import.meta.env.BASE_URL).toString()
+}
+
+export function getAuthCallbackUrl(): string | undefined {
+  return getAuthRedirectUrl('auth/callback')
+}
+
+export function getPasswordResetCallbackUrl(): string | undefined {
+  return getAuthRedirectUrl('auth/reset-password')
 }
 
 export async function register({
@@ -56,6 +64,22 @@ export async function login({ email, password }: AuthCredentials): Promise<AuthR
     email,
     password,
   })
+}
+
+export async function requestPasswordReset(email: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: getPasswordResetCallbackUrl(),
+  })
+
+  return { error }
+}
+
+export async function updatePassword(password: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase.auth.updateUser({
+    password,
+  })
+
+  return { error }
 }
 
 export async function logout(): Promise<{ error: Error | null }> {

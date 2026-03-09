@@ -20,6 +20,48 @@ const hasLetterPattern = /[A-Za-z]/
 const hasNumberPattern = /\d/
 const hasSpecialCharacterPattern = /[^A-Za-z0-9]/
 
+export function validatePasswordChangeInput(
+  password: string,
+  confirmPassword: string,
+): RegisterValidationResult {
+  if (!password || !confirmPassword) {
+    return {
+      isValid: false,
+      message: 'Please fill in all fields.',
+    }
+  }
+
+  if (password !== confirmPassword) {
+    return {
+      isValid: false,
+      message: 'Passwords do not match.',
+    }
+  }
+
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return {
+      isValid: false,
+      message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+    }
+  }
+
+  if (
+    !hasLetterPattern.test(password) ||
+    !hasNumberPattern.test(password) ||
+    !hasSpecialCharacterPattern.test(password)
+  ) {
+    return {
+      isValid: false,
+      message: 'Password must include letters, numbers, and a special character.',
+    }
+  }
+
+  return {
+    isValid: true,
+    message: null,
+  }
+}
+
 export function validateRegisterInput({
   fullName,
   username,
@@ -59,35 +101,7 @@ export function validateRegisterInput({
     }
   }
 
-  if (password !== confirmPassword) {
-    return {
-      isValid: false,
-      message: 'Passwords do not match.',
-    }
-  }
-
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return {
-      isValid: false,
-      message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
-    }
-  }
-
-  if (
-    !hasLetterPattern.test(password) ||
-    !hasNumberPattern.test(password) ||
-    !hasSpecialCharacterPattern.test(password)
-  ) {
-    return {
-      isValid: false,
-      message: 'Password must include letters, numbers, and a special character.',
-    }
-  }
-
-  return {
-    isValid: true,
-    message: null,
-  }
+  return validatePasswordChangeInput(password, confirmPassword)
 }
 
 export function getRegisterErrorMessage(message: string, identitiesCount?: number): string {
