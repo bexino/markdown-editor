@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
+import DocumentOutlineItem, {
+  type OutlineHeadingNode,
+} from '@/features/documents/components/DocumentOutlineItem.vue'
 import EditorIcon from '@/features/documents/components/EditorIcon.vue'
 import type { MarkdownHeading } from '@/features/documents/lib/markdown'
-
-defineProps<{
-  documentTitle: string
-  headings: MarkdownHeading[]
-  isOpen: boolean
-}>()
 
 const emit = defineEmits<{
   toggle: []
@@ -16,22 +13,39 @@ const emit = defineEmits<{
 }>()
 
 const isDocumentExpanded = ref(true)
+const props = defineProps<{
+  documentTitle: string
+  headings: MarkdownHeading[]
+  isOpen: boolean
+}>()
 
-function getItemClasses(level: number): string {
-  if (level <= 1) {
-    return 'pl-3'
+const headingTree = computed<OutlineHeadingNode[]>(() => {
+  const roots: OutlineHeadingNode[] = []
+  const stack: OutlineHeadingNode[] = []
+
+  for (const heading of props.headings) {
+    const node: OutlineHeadingNode = {
+      heading,
+      children: [],
+    }
+
+    while (stack.length > 0 && stack[stack.length - 1]!.heading.level >= heading.level) {
+      stack.pop()
+    }
+
+    const parent = stack[stack.length - 1]
+
+    if (parent) {
+      parent.children.push(node)
+    } else {
+      roots.push(node)
+    }
+
+    stack.push(node)
   }
 
-  if (level === 2) {
-    return 'pl-7'
-  }
-
-  if (level === 3) {
-    return 'pl-11'
-  }
-
-  return 'pl-14'
-}
+  return roots
+})
 </script>
 
 <template>
@@ -57,26 +71,19 @@ function getItemClasses(level: number): string {
         class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
         @click="isDocumentExpanded = !isDocumentExpanded"
       >
-        <EditorIcon :name="isDocumentExpanded ? 'chevron-down' : 'arrow-left'" />
-        <span class="truncate">{{ documentTitle || 'Untitled Document' }}</span>
+        <EditorIcon :name="isDocumentExpanded ? 'chevron-down' : 'chevron-right'" />
+        <span class="truncate">{{ props.documentTitle || 'Untitled Document' }}</span>
       </button>
 
       <div v-if="isDocumentExpanded" class="mt-2 space-y-1">
-        <button
-          v-for="heading in headings"
-          :key="heading.id"
-          type="button"
-          class="flex w-full cursor-pointer items-center gap-2 rounded-md py-1.5 pr-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          :class="getItemClasses(heading.level)"
-          @click="emit('select', heading.id)"
-        >
-          <span class="shrink-0 text-xs text-muted-foreground/70">
-            {{ '>'.repeat(Math.min(heading.level, 3)) }}
-          </span>
-          <span class="truncate">{{ heading.text }}</span>
-        </button>
+        <DocumentOutlineItem
+          v-for="node in headingTree"
+          :key="node.heading.id"
+          :node="node"
+          @select="emit('select', $event)"
+        />
 
-        <p v-if="headings.length === 0" class="px-3 py-2 text-sm text-muted-foreground">
+        <p v-if="props.headings.length === 0" class="px-3 py-2 text-sm text-muted-foreground">
           Add headings to see document sections.
         </p>
       </div>
