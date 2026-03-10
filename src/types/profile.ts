@@ -1,3 +1,5 @@
+export type ProfileFeedbackTone = 'error' | 'success'
+
 export interface ProfileFormData {
   name: string
   email: string
