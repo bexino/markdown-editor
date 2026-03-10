@@ -61,6 +61,18 @@ async function handleCreate(): Promise<void> {
   }
 }
 
+async function handleDuplicate(id: string): Promise<void> {
+  feedbackMessage.value = ''
+
+  try {
+    await documentStorage.duplicate(id)
+    await loadDocuments()
+  } catch (error) {
+    feedbackMessage.value =
+      error instanceof Error ? error.message : 'Unable to duplicate this document right now.'
+  }
+}
+
 function promptDelete(id: string): void {
   deleteId.value = id
 }
@@ -233,6 +245,7 @@ function formatUpdatedAt(value: string): string {
             :preview="getDocumentPreview(document.content)"
             :formatted-updated-at="formatUpdatedAt(document.updatedAt)"
             @open="openDocument"
+            @duplicate="handleDuplicate"
             @delete="promptDelete"
           />
         </section>

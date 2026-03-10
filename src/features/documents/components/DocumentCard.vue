@@ -9,6 +9,7 @@ defineProps<{
 
 const emit = defineEmits<{
   open: [id: string]
+  duplicate: [id: string]
   delete: [id: string]
 }>()
 
@@ -18,6 +19,10 @@ function handleOpen(id: string): void {
 
 function handleDelete(id: string): void {
   emit('delete', id)
+}
+
+function handleDuplicate(id: string): void {
+  emit('duplicate', id)
 }
 </script>
 
@@ -50,29 +55,52 @@ function handleDelete(id: string): void {
         <h3 class="truncate font-semibold">{{ document.name }}</h3>
       </div>
 
-      <button
-        type="button"
-        class="-mt-1 -mr-1 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
-        aria-label="Delete document"
-        @click.stop="handleDelete(document.id)"
-      >
-        <svg
-          class="size-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
+      <div class="-mt-1 -mr-1 flex items-center gap-1 opacity-0 transition-all group-hover:opacity-100 focus-within:opacity-100">
+        <button
+          type="button"
+          class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Duplicate document"
+          @click.stop="handleDuplicate(document.id)"
         >
-          <path d="M3 6h18" />
-          <path d="M8 6V4h8v2" />
-          <path d="M19 6l-1 14H6L5 6" />
-          <path d="M10 11v6" />
-          <path d="M14 11v6" />
-        </svg>
-      </button>
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Delete document"
+          @click.stop="handleDelete(document.id)"
+        >
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <p class="document-preview mb-3 text-sm text-muted-foreground">

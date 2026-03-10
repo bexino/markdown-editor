@@ -27,6 +27,10 @@ function mapDocumentRow(row: DocumentRow): DocumentRecord {
   }
 }
 
+function getDuplicateName(name: string): string {
+  return `${name} (Copy)`
+}
+
 async function requireUserId(): Promise<string> {
   const user = await getCurrentUser()
 
@@ -85,6 +89,15 @@ export const documentStorage = {
     }
 
     return mapDocumentRow(data)
+  },
+  async duplicate(id: string): Promise<DocumentRecord> {
+    const document = await this.getById(id)
+
+    if (!document) {
+      throw new Error('Unable to find this document right now.')
+    }
+
+    return this.create(getDuplicateName(document.name), document.content)
   },
   async update(
     id: string,
