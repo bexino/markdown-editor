@@ -5,6 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getCurrentUser, logout } from '@/lib/auth'
+import { getUserDisplayName, getUserInitials } from '@/lib/userProfile'
 
 const router = useRouter()
 
@@ -14,40 +15,11 @@ const user = ref<User | null>(null)
 const menuRoot = ref<HTMLElement | null>(null)
 
 const userName = computed(() => {
-  const metadata = user.value?.user_metadata
-  const fullName = typeof metadata?.full_name === 'string' ? metadata.full_name.trim() : ''
-  const username = typeof metadata?.username === 'string' ? metadata.username.trim() : ''
-  const email = user.value?.email?.trim() ?? ''
-
-  if (fullName) {
-    return fullName
-  }
-
-  if (username) {
-    return username
-  }
-
-  if (email.includes('@')) {
-    return email.split('@')[0]
-  }
-
-  return email
+  return getUserDisplayName(user.value)
 })
 
 const initials = computed(() => {
-  const value = userName.value
-
-  if (!value) {
-    return 'U'
-  }
-
-  return value
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return getUserInitials(user.value)
 })
 
 async function loadUser(): Promise<void> {
