@@ -53,7 +53,7 @@ const headingTree = computed<OutlineHeadingNode[]>(() => {
     class="hidden border-r border-border bg-card transition-[width] duration-200 md:flex md:flex-col"
     :class="isOpen ? 'w-72' : 'w-14'"
   >
-    <div class="flex h-14 items-center justify-between border-b border-border px-3">
+    <div class="flex h-14 items-center border-b border-border px-3">
       <button
         type="button"
         class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
@@ -61,8 +61,6 @@ const headingTree = computed<OutlineHeadingNode[]>(() => {
       >
         <EditorIcon name="sidebar" />
       </button>
-
-      <span v-if="isOpen" class="text-sm font-medium text-foreground">Outline</span>
     </div>
 
     <div v-if="isOpen" class="min-h-0 flex-1 overflow-auto px-2 py-3">
