@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
 import EditorHeader from '@/features/documents/components/EditorHeader.vue'
 import EditorToolbar from '@/features/documents/components/EditorToolbar.vue'
@@ -20,6 +20,8 @@ const savedContent = ref('')
 const errorMessage = ref('')
 const statusMessage = ref('')
 const statusTone = ref<'success' | 'error'>('success')
+const showBackConfirmation = ref(false)
+const allowBackNavigation = ref(false)
 
 let statusTimeout: number | undefined
 
@@ -31,14 +33,30 @@ const hasUnsavedChanges = computed(() => {
 onMounted(() => {
   void loadDocument()
   window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 
   if (statusTimeout) {
     window.clearTimeout(statusTimeout)
   }
+})
+
+onBeforeRouteLeave((to) => {
+  if (!hasUnsavedChanges.value || allowBackNavigation.value) {
+    allowBackNavigation.value = false
+    return true
+  }
+
+  if (to.path === '/documents') {
+    showBackConfirmation.value = true
+    return false
+  }
+
+  return true
 })
 
 async function loadDocument(): Promise<void> {
@@ -117,11 +135,35 @@ function showStatus(message: string, tone: 'success' | 'error'): void {
 }
 
 function handleBack(): void {
+  if (hasUnsavedChanges.value) {
+    showBackConfirmation.value = true
+    return
+  }
+
+  void router.push('/documents')
+}
+
+function closeBackConfirmation(): void {
+  showBackConfirmation.value = false
+}
+
+function confirmBackNavigation(): void {
+  allowBackNavigation.value = true
+  showBackConfirmation.value = false
   void router.push('/documents')
 }
 
 function openPreview(): void {
   void router.push(`/preview/${documentId.value}`)
+}
+
+function handleBeforeUnload(event: BeforeUnloadEvent): void {
+  if (!hasUnsavedChanges.value) {
+    return
+  }
+
+  event.preventDefault()
+  event.returnValue = ''
 }
 
 function handleKeyDown(event: KeyboardEvent): void {
@@ -203,5 +245,35 @@ function handleKeyDown(event: KeyboardEvent): void {
       :content="content"
       @update-content="content = $event"
     />
+
+    <div
+      v-if="showBackConfirmation"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      @click.self="closeBackConfirmation"
+    >
+      <section class="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+        <h2 class="text-xl font-semibold">Unsaved changes</h2>
+        <p class="mt-2 text-sm text-muted-foreground">
+          You have unsaved changes. Are you sure you want to go back?
+        </p>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+            @click="closeBackConfirmation"
+          >
+            Stay here
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            @click="confirmBackNavigation"
+          >
+            Go back
+          </button>
+        </div>
+      </section>
+    </div>
   </main>
 </template>
