@@ -19,6 +19,7 @@ const renderedContent = computed(() => {
 <template>
   <div
     v-if="renderedContent"
+    data-markdown-preview
     class="prose prose-slate max-w-none"
     v-html="renderedContent"
   />

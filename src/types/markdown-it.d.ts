@@ -7,6 +7,7 @@ declare module 'markdown-it' {
     content: string
     markup: string
     info: string
+    map?: [number, number]
     children?: MarkdownToken[]
   }
 

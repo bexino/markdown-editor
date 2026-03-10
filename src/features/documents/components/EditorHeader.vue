@@ -9,10 +9,12 @@ defineProps<{
   isSaving: boolean
   saveStateLabel?: string
   saveStateTone?: 'default' | 'error'
+  sidebarOpen: boolean
 }>()
 
 const emit = defineEmits<{
   back: []
+  toggleSidebar: []
   updateTitle: [value: string]
   preview: []
   save: []
@@ -31,6 +33,15 @@ const emit = defineEmits<{
       >
         <EditorIcon name="arrow-left" />
         <span class="hidden sm:inline">Back</span>
+      </button>
+
+      <button
+        type="button"
+        class="hidden h-9 cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
+        @click="emit('toggleSidebar')"
+      >
+        <EditorIcon name="sidebar" />
+        <span class="hidden lg:inline">{{ sidebarOpen ? 'Hide outline' : 'Show outline' }}</span>
       </button>
 
       <div class="flex min-w-0 flex-1 items-center gap-2">

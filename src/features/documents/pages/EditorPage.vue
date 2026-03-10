@@ -4,9 +4,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
 import EditorHeader from '@/features/documents/components/EditorHeader.vue'
+import DocumentOutlineSidebar from '@/features/documents/components/DocumentOutlineSidebar.vue'
 import EditorToolbar from '@/features/documents/components/EditorToolbar.vue'
 import EditorWorkspace from '@/features/documents/components/EditorWorkspace.vue'
-import { parseMarkdown } from '@/features/documents/lib/markdown'
+import { extractMarkdownHeadings, parseMarkdown } from '@/features/documents/lib/markdown'
 import { documentStorage } from '@/features/documents/services/documentStorage'
 
 const route = useRoute()
@@ -24,6 +25,7 @@ const statusMessage = ref('')
 const statusTone = ref<'success' | 'error'>('success')
 const showBackConfirmation = ref(false)
 const allowBackNavigation = ref(false)
+const isSidebarOpen = ref(true)
 
 let statusTimeout: number | undefined
 let autosaveTimeout: number | undefined
@@ -53,6 +55,9 @@ const saveStateLabel = computed(() => {
 })
 const saveStateTone = computed<'default' | 'error'>(() => {
   return errorMessage.value ? 'error' : 'default'
+})
+const documentHeadings = computed(() => {
+  return extractMarkdownHeadings(content.value)
 })
 
 onMounted(() => {
@@ -204,6 +209,14 @@ function confirmBackNavigation(): void {
 
 function openPreview(): void {
   void router.push(`/preview/${documentId.value}`)
+}
+
+function toggleSidebar(): void {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+function handleSelectHeading(id: string): void {
+  workspace.value?.scrollToHeading(id)
 }
 
 function createExportFilename(extension: 'md' | 'pdf'): string {
@@ -489,42 +502,56 @@ watch([name, content], () => {
       :is-saving="isSaving"
       :save-state-label="saveStateLabel"
       :save-state-tone="saveStateTone"
+      :sidebar-open="isSidebarOpen"
       @back="handleBack"
       @export-markdown="handleExportMarkdown"
       @export-pdf="handleExportPdf"
+      @toggle-sidebar="toggleSidebar"
       @update-title="name = $event"
       @preview="openPreview"
       @save="handleSave"
     />
 
-    <EditorToolbar
-      @insert="workspace?.insertAtCursor($event)"
-      @wrap="workspace?.insertMarkdown($event.before, $event.after)"
-    />
+    <div class="flex min-h-0 flex-1 overflow-hidden">
+      <DocumentOutlineSidebar
+        :document-title="name"
+        :headings="documentHeadings"
+        :is-open="isSidebarOpen"
+        @toggle="toggleSidebar"
+        @select="handleSelectHeading"
+      />
 
-    <section
-      v-if="isLoading"
-      class="flex flex-1 items-center justify-center px-6 text-sm text-muted-foreground"
-    >
-      Loading document...
-    </section>
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <EditorToolbar
+          @insert="workspace?.insertAtCursor($event)"
+          @wrap="workspace?.insertMarkdown($event.before, $event.after)"
+        />
 
-    <section
-      v-else-if="errorMessage && !name && !content"
-      class="flex flex-1 items-center justify-center px-6"
-    >
-      <div class="max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-sm">
-        <h1 class="text-2xl font-semibold">Unable to load document</h1>
-        <p class="mt-2 text-sm text-muted-foreground">{{ errorMessage }}</p>
+        <section
+          v-if="isLoading"
+          class="flex flex-1 items-center justify-center px-6 text-sm text-muted-foreground"
+        >
+          Loading document...
+        </section>
+
+        <section
+          v-else-if="errorMessage && !name && !content"
+          class="flex flex-1 items-center justify-center px-6"
+        >
+          <div class="max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+            <h1 class="text-2xl font-semibold">Unable to load document</h1>
+            <p class="mt-2 text-sm text-muted-foreground">{{ errorMessage }}</p>
+          </div>
+        </section>
+
+        <EditorWorkspace
+          v-else
+          ref="workspace"
+          :content="content"
+          @update-content="content = $event"
+        />
       </div>
-    </section>
-
-    <EditorWorkspace
-      v-else
-      ref="workspace"
-      :content="content"
-      @update-content="content = $event"
-    />
+    </div>
 
     <div
       v-if="showBackConfirmation"

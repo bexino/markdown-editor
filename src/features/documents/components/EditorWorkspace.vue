@@ -12,6 +12,8 @@ const emit = defineEmits<{
 }>()
 
 const textarea = ref<HTMLTextAreaElement | null>(null)
+const mobilePreview = ref<HTMLElement | null>(null)
+const desktopPreview = ref<HTMLElement | null>(null)
 const isResizing = ref(false)
 const leftPanelSize = ref(50)
 
@@ -31,6 +33,28 @@ function setTextareaRef(
     element instanceof Element ? element : element && '$el' in element ? element.$el : null
 
   textarea.value = resolvedElement instanceof HTMLTextAreaElement ? resolvedElement : null
+}
+
+function setPreviewRef(
+  element:
+    | Element
+    | {
+        $el?: Element
+      }
+    | null,
+  target: 'mobile' | 'desktop',
+): void {
+  const resolvedElement =
+    element instanceof Element ? element : element && '$el' in element ? element.$el : null
+
+  const previewElement = resolvedElement instanceof HTMLElement ? resolvedElement : null
+
+  if (target === 'mobile') {
+    mobilePreview.value = previewElement
+    return
+  }
+
+  desktopPreview.value = previewElement
 }
 
 function updateContent(value: string): void {
@@ -113,10 +137,31 @@ function insertAtCursor(text: string): void {
   })
 }
 
+function scrollToHeading(id: string): void {
+  const previewRoot =
+    window.innerWidth >= 768 ? desktopPreview.value ?? mobilePreview.value : mobilePreview.value
+
+  if (!previewRoot) {
+    return
+  }
+
+  const heading = previewRoot.querySelector<HTMLElement>(`#${CSS.escape(id)}`)
+
+  if (!heading) {
+    return
+  }
+
+  heading.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  })
+}
+
 defineExpose({
   focusEditor,
   insertAtCursor,
   insertMarkdown,
+  scrollToHeading,
 })
 
 onBeforeUnmount(() => {
@@ -144,7 +189,10 @@ onBeforeUnmount(() => {
         <div class="border-b border-border bg-muted/30 px-4 py-2">
           <span class="text-sm font-medium">Preview</span>
         </div>
-        <div class="flex-1 overflow-auto bg-muted/10 p-6">
+        <div
+          :ref="(element) => setPreviewRef(element, 'mobile')"
+          class="flex-1 overflow-auto bg-muted/10 p-6"
+        >
           <div class="mx-auto max-w-3xl">
             <MarkdownPreview :content="content" />
           </div>
@@ -181,7 +229,10 @@ onBeforeUnmount(() => {
         <div class="border-b border-border bg-muted/30 px-4 py-2">
           <span class="text-sm font-medium">Preview</span>
         </div>
-        <div class="flex-1 overflow-auto bg-muted/10 p-6">
+        <div
+          :ref="(element) => setPreviewRef(element, 'desktop')"
+          class="flex-1 overflow-auto bg-muted/10 p-6"
+        >
           <div class="mx-auto max-w-3xl">
             <MarkdownPreview :content="content" />
           </div>
