@@ -30,6 +30,7 @@ export function useProfileSettings() {
   const isChangingPassword = ref(false)
   const isDeletingAccount = ref(false)
   const isResolvingPendingEmailChange = ref(false)
+  const shouldContinueEmailChangeAfterCancel = ref(false)
   const showDeleteDialog = ref(false)
   const showPasswordDialog = ref(false)
   const showPendingEmailDialog = ref(false)
@@ -55,6 +56,11 @@ export function useProfileSettings() {
   const pendingEmail = computed(() => user.value?.new_email?.trim() ?? '')
   const hasPendingEmailChange = computed(() => pendingEmail.value.length > 0)
   const normalizedFormEmail = computed(() => formData.value.email.trim().toLowerCase())
+  const willStartAnotherEmailChange = computed(
+    () =>
+      normalizedFormEmail.value.length > 0 &&
+      normalizedFormEmail.value !== confirmedEmail.value
+  )
   const isAttemptingSecondUnverifiedEmailChange = computed(
     () =>
       hasPendingEmailChange.value &&
@@ -111,9 +117,11 @@ export function useProfileSettings() {
 
   function closePendingEmailDialog(): void {
     showPendingEmailDialog.value = false
+    shouldContinueEmailChangeAfterCancel.value = false
   }
 
-  function openPendingEmailDialog(): void {
+  function openPendingEmailDialog(continueAfterCancel = false): void {
+    shouldContinueEmailChangeAfterCancel.value = continueAfterCancel
     showPendingEmailDialog.value = true
   }
 
@@ -150,7 +158,7 @@ export function useProfileSettings() {
     }
 
     if (isAttemptingSecondUnverifiedEmailChange.value) {
-      showPendingEmailDialog.value = true
+      openPendingEmailDialog(true)
       return
     }
 
@@ -197,6 +205,14 @@ export function useProfileSettings() {
 
       user.value = refreshedUser
       showPendingEmailDialog.value = false
+      const shouldContinue = shouldContinueEmailChangeAfterCancel.value
+      shouldContinueEmailChangeAfterCancel.value = false
+
+      if (!shouldContinue) {
+        resetProfileForm()
+        setFeedback('Previous email change canceled.', 'success')
+        return
+      }
 
       const updatedUser = await updateProfile(refreshedUser, formData.value)
       user.value = updatedUser
@@ -211,7 +227,7 @@ export function useProfileSettings() {
         return
       }
 
-      setFeedback('Previous email change canceled. Profile updated successfully.', 'success')
+      setFeedback('Pending email change canceled. Profile updated successfully.', 'success')
     } catch (error) {
       setFeedback(
         error instanceof Error ? error.message : 'Unable to update your email right now.',
@@ -310,6 +326,7 @@ export function useProfileSettings() {
     openPendingEmailDialog,
     passwordData,
     pendingEmail,
+    willStartAnotherEmailChange,
     showDeleteDialog,
     showPasswordDialog,
     showPendingEmailDialog,

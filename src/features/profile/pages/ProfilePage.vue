@@ -45,6 +45,7 @@ const {
   signOutAndReturnHome,
   startEditing,
   user,
+  willStartAnotherEmailChange,
 } = useProfileSettings()
 </script>
 
@@ -101,7 +102,7 @@ const {
             :initials="initials"
             :joined-date="joinedDate"
             :pending-email="pendingEmail"
-            @resolve-pending="openPendingEmailDialog"
+            @resolve-pending="openPendingEmailDialog()"
             @wait="handleWaitForPendingEmailVerification"
           />
 
@@ -139,6 +140,7 @@ const {
       :email="user?.email ?? ''"
       :is-pending="isResolvingPendingEmailChange"
       :pending-email="pendingEmail"
+      :will-start-another-email-change="willStartAnotherEmailChange"
       :visible="showPendingEmailDialog"
       @cancel-pending="handleCancelPendingEmailAndContinue"
       @close="closePendingEmailDialog"

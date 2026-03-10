@@ -63,12 +63,45 @@ export async function cancelPendingEmailChange(
     throw new Error('The confirmed email is required to cancel the pending change.')
   }
 
-  const { data, error } = await supabase.functions.invoke('cancel-pending-email-change', {
-    body: { email },
-  })
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
 
-  if (error) {
-    throw new Error(error.message)
+  if (sessionError) {
+    throw new Error(sessionError.message)
+  }
+
+  if (!session?.access_token) {
+    throw new Error('Your session expired. Sign in again before canceling the pending email change.')
+  }
+
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-pending-email-change`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ email }),
+    }
+  )
+
+  let data: { error?: string } | null = null
+
+  try {
+    data = (await response.json()) as { error?: string }
+  } catch {
+    data = null
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error ??
+        'The cancel email change function returned an unexpected response. Check the Edge Function logs and environment variables.'
+    )
   }
 
   if (data?.error) {

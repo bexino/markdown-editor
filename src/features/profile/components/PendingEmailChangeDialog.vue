@@ -3,6 +3,7 @@ defineProps<{
   email: string
   isPending: boolean
   pendingEmail: string
+  willStartAnotherEmailChange: boolean
   visible: boolean
 }>()
 
@@ -31,9 +32,12 @@ const emit = defineEmits<{
       <div class="mt-6 space-y-4 text-sm text-muted-foreground">
         <div class="rounded-xl border border-border bg-background px-4 py-3">
           <p class="font-medium text-foreground">Option 1</p>
-          <p class="mt-1">
+          <p v-if="willStartAnotherEmailChange" class="mt-1">
             Cancel the pending email change, invalidate that verification flow, and continue with
             this new email update.
+          </p>
+          <p v-else class="mt-1">
+            Cancel the pending email change and keep your confirmed email as {{ email }}.
           </p>
         </div>
 
@@ -62,7 +66,13 @@ const emit = defineEmits<{
           :disabled="isPending"
           @click="emit('cancelPending')"
         >
-          {{ isPending ? 'Updating...' : 'Cancel Pending Change and Continue' }}
+          {{
+            isPending
+              ? 'Updating...'
+              : willStartAnotherEmailChange
+                ? 'Cancel Pending Change and Continue'
+                : 'Cancel Pending Change'
+          }}
         </button>
       </div>
     </section>

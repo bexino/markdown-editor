@@ -19,9 +19,7 @@ Deno.serve(async (request) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return Response.json(
         { error: 'Supabase function environment variables are not configured.' },
         { status: 500, headers: corsHeaders }
@@ -48,7 +46,16 @@ Deno.serve(async (request) => {
     const payload = (await request.json()) as { email?: string }
     const confirmedEmail = payload.email?.trim().toLowerCase()
     const currentEmail = user.email.trim().toLowerCase()
-    const pendingEmail = user.new_email?.trim().toLowerCase()
+    const pendingEmail =
+      (
+        typeof (user as { new_email?: string }).new_email === 'string'
+          ? (user as { new_email?: string }).new_email
+          : typeof (user as { email_change?: string }).email_change === 'string'
+            ? (user as { email_change?: string }).email_change
+            : ''
+      )
+        .trim()
+        .toLowerCase()
 
     if (!confirmedEmail) {
       return Response.json({ error: 'The confirmed email is required.' }, { status: 400, headers: corsHeaders })
@@ -71,29 +78,33 @@ Deno.serve(async (request) => {
       )
     }
 
-    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+    const { error: cancelError } = await userClient.rpc('cancel_pending_email_change', {
+      target_user_id: user.id,
+      confirmed_email: currentEmail,
     })
 
-    const { data, error } = await adminClient.auth.admin.updateUserById(user.id, {
-      email: currentEmail,
-      email_confirm: true,
-      user_metadata: user.user_metadata,
-    })
-
-    if (error || !data.user) {
+    if (cancelError) {
       return Response.json(
-        { error: error?.message ?? 'Unable to cancel the pending email change.' },
+        { error: cancelError.message ?? 'Unable to cancel the pending email change.' },
+        { status: 500, headers: corsHeaders }
+      )
+    }
+
+    const {
+      data: { user: refreshedUser },
+      error: refreshError,
+    } = await userClient.auth.getUser()
+
+    if (refreshError || !refreshedUser) {
+      return Response.json(
+        { error: refreshError?.message ?? 'Unable to refresh the updated user.' },
         { status: 500, headers: corsHeaders }
       )
     }
 
     return Response.json(
       {
-        user: data.user,
+        user: refreshedUser,
         cancelled: true,
       },
       { headers: corsHeaders }
