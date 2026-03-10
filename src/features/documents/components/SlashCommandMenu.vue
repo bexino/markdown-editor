@@ -29,7 +29,7 @@ const hoveredIndex = ref<number | null>(null)
     aria-label="Slash commands"
   >
     <div class="mb-1 px-2 py-1 text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
-      Slash commands
+      Commands
     </div>
 
     <div
