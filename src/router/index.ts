@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DocumentsView from '@/views/app/DocumentsView.vue'
-import EditorView from '@/views/app/EditorView.vue'
-import ProfileView from '@/views/app/ProfileView.vue'
-import AuthCallbackView from '@/views/auth/AuthCallbackView.vue'
-import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
-import RegisterView from '@/views/auth/RegisterView.vue'
-import ResetPasswordView from '@/views/auth/ResetPasswordView.vue'
-import SignInView from '@/views/auth/SignInView.vue'
-import LandingView from '@/views/landing/LandingView.vue'
+import DocumentsView from '@/features/documents/pages/DocumentsPage.vue'
+import EditorView from '@/features/documents/pages/EditorPage.vue'
+import ProfileView from '@/features/profile/pages/ProfilePage.vue'
+import AuthCallbackView from '@/features/auth/pages/AuthCallbackPage.vue'
+import ForgotPasswordView from '@/features/auth/pages/ForgotPasswordPage.vue'
+import RegisterView from '@/features/auth/pages/RegisterPage.vue'
+import ResetPasswordView from '@/features/auth/pages/ResetPasswordPage.vue'
+import SignInView from '@/features/auth/pages/SignInPage.vue'
+import LandingView from '@/features/landing/pages/LandingPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
