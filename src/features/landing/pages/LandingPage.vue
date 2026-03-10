@@ -100,29 +100,11 @@ async function navigateTo(path: string): Promise<void> {
       </div>
 
       <div class="mt-16 overflow-hidden rounded-xl border-2 bg-card shadow-2xl">
-        <div
-          class="flex aspect-video items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5"
-        >
-          <div class="p-8 text-center">
-            <svg
-              class="mx-auto mb-4 size-24 text-primary/40"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6" />
-              <path d="M16 13H8" />
-              <path d="M16 17H8" />
-              <path d="M10 9H8" />
-            </svg>
-            <p class="text-muted-foreground">Split-pane editor with live preview</p>
-          </div>
-        </div>
+        <img
+          src="/markdown-preview.png"
+          alt="Markdown editor preview"
+          class="aspect-video w-full object-cover object-top"
+        />
       </div>
     </section>
 
