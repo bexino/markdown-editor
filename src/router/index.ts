@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DocumentsView from '@/features/documents/pages/DocumentsPage.vue'
 import EditorView from '@/features/documents/pages/EditorPage.vue'
+import PreviewView from '@/features/documents/pages/PreviewPage.vue'
 import ProfileView from '@/features/profile/pages/ProfilePage.vue'
 import AuthCallbackView from '@/features/auth/pages/AuthCallbackPage.vue'
 import ForgotPasswordView from '@/features/auth/pages/ForgotPasswordPage.vue'
@@ -41,6 +42,11 @@ const router = createRouter({
       path: '/editor/:id',
       name: 'editor',
       component: EditorView,
+    },
+    {
+      path: '/preview/:id',
+      name: 'preview',
+      component: PreviewView,
     },
     {
       path: '/profile',

@@ -86,6 +86,31 @@ export const documentStorage = {
 
     return mapDocumentRow(data)
   },
+  async update(
+    id: string,
+    input: {
+      name: string
+      content: string
+    },
+  ): Promise<DocumentRecord> {
+    await requireUserId()
+
+    const { data, error } = await supabase
+      .from('documents')
+      .update({
+        title: input.name,
+        content: input.content,
+      })
+      .eq('id', id)
+      .select('id, title, content, created_at, updated_at')
+      .single()
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return mapDocumentRow(data)
+  },
   async delete(id: string): Promise<void> {
     await requireUserId()
 
