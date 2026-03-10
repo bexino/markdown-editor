@@ -74,6 +74,15 @@ function resetPasswordForm(): void {
   passwordData.value = createPasswordForm()
 }
 
+function closePasswordDialog(): void {
+  showPasswordDialog.value = false
+  resetPasswordForm()
+}
+
+function closeDeleteDialog(): void {
+  showDeleteDialog.value = false
+}
+
 async function loadProfile(): Promise<void> {
   isLoading.value = true
   feedbackMessage.value = ''
@@ -168,7 +177,7 @@ async function handleDeleteAccount(): Promise<void> {
       error instanceof Error ? error.message : 'Unable to delete your account right now.',
       'error'
     )
-    showDeleteDialog.value = false
+    closeDeleteDialog()
   } finally {
     isDeletingAccount.value = false
   }
@@ -517,10 +526,7 @@ async function signOutAndReturnHome(): Promise<void> {
     <div
       v-if="showPasswordDialog"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      @click.self="
-        showPasswordDialog = false
-        resetPasswordForm()
-      "
+      @click.self="closePasswordDialog"
     >
       <section class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
         <header>
@@ -570,10 +576,7 @@ async function signOutAndReturnHome(): Promise<void> {
             type="button"
             class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
             :disabled="isChangingPassword"
-            @click="
-              showPasswordDialog = false
-              resetPasswordForm()
-            "
+            @click="closePasswordDialog"
           >
             Cancel
           </button>
@@ -593,7 +596,7 @@ async function signOutAndReturnHome(): Promise<void> {
     <div
       v-if="showDeleteDialog"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      @click.self="showDeleteDialog = false"
+      @click.self="closeDeleteDialog"
     >
       <section class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
         <header>
@@ -609,7 +612,7 @@ async function signOutAndReturnHome(): Promise<void> {
             type="button"
             class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
             :disabled="isDeletingAccount"
-            @click="showDeleteDialog = false"
+            @click="closeDeleteDialog"
           >
             Cancel
           </button>
