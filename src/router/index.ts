@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DocumentsView from '@/views/app/DocumentsView.vue'
+import EditorView from '@/views/app/EditorView.vue'
+import ProfileView from '@/views/app/ProfileView.vue'
 import AuthCallbackView from '@/views/auth/AuthCallbackView.vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
@@ -34,6 +36,16 @@ const router = createRouter({
       path: '/documents',
       name: 'documents',
       component: DocumentsView,
+    },
+    {
+      path: '/editor/:id',
+      name: 'editor',
+      component: EditorView,
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
     },
     {
       path: '/auth/callback',
