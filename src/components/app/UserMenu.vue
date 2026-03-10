@@ -92,7 +92,7 @@ onBeforeUnmount(() => {
   <div v-if="user" ref="menuRoot" class="relative">
     <button
       type="button"
-      class="inline-flex h-10 items-center gap-2 rounded-md px-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      class="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md px-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
       :aria-expanded="isOpen"
       aria-haspopup="menu"
       @click="isOpen = !isOpen"
@@ -121,7 +121,7 @@ onBeforeUnmount(() => {
 
       <button
         type="button"
-        class="flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        class="flex w-full cursor-pointer items-center rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
         role="menuitem"
         @click="navigateTo('/documents')"
       >
@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
 
       <button
         type="button"
-        class="flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        class="flex w-full cursor-pointer items-center rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
         role="menuitem"
         @click="navigateTo('/profile')"
       >
@@ -170,7 +170,7 @@ onBeforeUnmount(() => {
 
       <button
         type="button"
-        class="flex w-full items-center rounded-md px-2 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        class="flex w-full cursor-pointer items-center rounded-md px-2 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="isLoading"
         role="menuitem"
         @click="handleLogout"

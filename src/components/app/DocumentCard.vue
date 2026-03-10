@@ -52,7 +52,7 @@ function handleDelete(id: string): void {
 
       <button
         type="button"
-        class="-mt-1 -mr-1 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
+        class="-mt-1 -mr-1 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
         aria-label="Delete document"
         @click.stop="handleDelete(document.id)"
       >
