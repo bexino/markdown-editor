@@ -496,7 +496,8 @@ watch([name, content], () => {
 </script>
 
 <template>
-  <main class="flex min-h-screen flex-col bg-background text-foreground">
+  <main class="flex h-screen overflow-hidden bg-background text-foreground">
+    <div class="flex min-h-0 flex-1 flex-col">
     <EditorHeader
       :title="name"
       :is-saving="isSaving"
@@ -549,6 +550,7 @@ watch([name, content], () => {
           @update-content="content = $event"
         />
       </div>
+    </div>
     </div>
 
     <div
