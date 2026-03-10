@@ -2,6 +2,7 @@
 import UserMenu from '@/shared/components/UserMenu.vue'
 
 import EditorIcon from '@/features/documents/components/EditorIcon.vue'
+import ExportMenu from '@/features/documents/components/ExportMenu.vue'
 
 defineProps<{
   title: string
@@ -13,6 +14,8 @@ const emit = defineEmits<{
   updateTitle: [value: string]
   preview: []
   save: []
+  exportMarkdown: []
+  exportPdf: []
 }>()
 </script>
 
@@ -42,6 +45,8 @@ const emit = defineEmits<{
       </div>
 
       <div class="ml-auto flex items-center gap-2">
+        <ExportMenu @markdown="emit('exportMarkdown')" @pdf="emit('exportPdf')" />
+
         <button
           type="button"
           class="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-3 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"

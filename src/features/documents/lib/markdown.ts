@@ -1,5 +1,5 @@
 import hljs from 'highlight.js'
-import MarkdownIt from 'markdown-it'
+import MarkdownIt, { type MarkdownToken } from 'markdown-it'
 
 const markdown = new MarkdownIt({
   breaks: true,
@@ -17,4 +17,8 @@ const markdown = new MarkdownIt({
 
 export function renderMarkdown(content: string): string {
   return markdown.render(content)
+}
+
+export function parseMarkdown(content: string): MarkdownToken[] {
+  return markdown.parse(content, {})
 }

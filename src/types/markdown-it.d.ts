@@ -1,4 +1,15 @@
 declare module 'markdown-it' {
+  export interface MarkdownToken {
+    type: string
+    tag: string
+    nesting: number
+    level: number
+    content: string
+    markup: string
+    info: string
+    children?: MarkdownToken[]
+  }
+
   interface MarkdownItOptions {
     breaks?: boolean
     html?: boolean
@@ -9,6 +20,7 @@ declare module 'markdown-it' {
 
   export default class MarkdownIt {
     constructor(options?: MarkdownItOptions)
+    parse(content: string, env: object): MarkdownToken[]
     render(content: string): string
   }
 }
