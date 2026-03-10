@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { jsPDF } from 'jspdf'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
 import EditorHeader from '@/features/documents/components/EditorHeader.vue'
@@ -26,10 +26,33 @@ const showBackConfirmation = ref(false)
 const allowBackNavigation = ref(false)
 
 let statusTimeout: number | undefined
+let autosaveTimeout: number | undefined
 
 const documentId = computed(() => String(route.params.id ?? ''))
 const hasUnsavedChanges = computed(() => {
   return name.value !== savedName.value || content.value !== savedContent.value
+})
+const saveStateLabel = computed(() => {
+  if (errorMessage.value) {
+    return errorMessage.value
+  }
+
+  if (isSaving.value) {
+    return 'Saving...'
+  }
+
+  if (hasUnsavedChanges.value) {
+    return 'Unsaved changes'
+  }
+
+  if (statusMessage.value && statusTone.value === 'success') {
+    return statusMessage.value
+  }
+
+  return ''
+})
+const saveStateTone = computed<'default' | 'error'>(() => {
+  return errorMessage.value ? 'error' : 'default'
 })
 
 onMounted(() => {
@@ -44,6 +67,10 @@ onBeforeUnmount(() => {
 
   if (statusTimeout) {
     window.clearTimeout(statusTimeout)
+  }
+
+  if (autosaveTimeout) {
+    window.clearTimeout(autosaveTimeout)
   }
 })
 
@@ -93,7 +120,7 @@ async function loadDocument(): Promise<void> {
   }
 }
 
-async function handleSave(): Promise<void> {
+async function handleSave(isAutosave = false): Promise<void> {
   if (!documentId.value || isSaving.value) {
     return
   }
@@ -110,7 +137,7 @@ async function handleSave(): Promise<void> {
     name.value = updatedDocument.name
     savedName.value = updatedDocument.name
     savedContent.value = updatedDocument.content
-    showStatus('Document saved', 'success')
+    showStatus(isAutosave ? 'Automatically saved' : 'Document saved', 'success')
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Unable to save this document right now.'
@@ -121,6 +148,26 @@ async function handleSave(): Promise<void> {
       isSaving.value = false
     }, 300)
   }
+}
+
+function scheduleAutosave(): void {
+  if (autosaveTimeout) {
+    window.clearTimeout(autosaveTimeout)
+  }
+
+  if (!hasUnsavedChanges.value || isLoading.value || isSaving.value || !documentId.value) {
+    return
+  }
+
+  autosaveTimeout = window.setTimeout(() => {
+    autosaveTimeout = undefined
+
+    if (!hasUnsavedChanges.value || isLoading.value || isSaving.value || !documentId.value) {
+      return
+    }
+
+    void handleSave(true)
+  }, 5000)
 }
 
 function showStatus(message: string, tone: 'success' | 'error'): void {
@@ -429,6 +476,10 @@ function handleKeyDown(event: KeyboardEvent): void {
     workspace.value.insertMarkdown('*', '*')
   }
 }
+
+watch([name, content], () => {
+  scheduleAutosave()
+})
 </script>
 
 <template>
@@ -436,6 +487,8 @@ function handleKeyDown(event: KeyboardEvent): void {
     <EditorHeader
       :title="name"
       :is-saving="isSaving"
+      :save-state-label="saveStateLabel"
+      :save-state-tone="saveStateTone"
       @back="handleBack"
       @export-markdown="handleExportMarkdown"
       @export-pdf="handleExportPdf"
@@ -448,22 +501,6 @@ function handleKeyDown(event: KeyboardEvent): void {
       @insert="workspace?.insertAtCursor($event)"
       @wrap="workspace?.insertMarkdown($event.before, $event.after)"
     />
-
-    <div
-      v-if="errorMessage || statusMessage || hasUnsavedChanges"
-      class="border-b border-border bg-background/95 px-4 py-2"
-    >
-      <div class="flex flex-wrap items-center gap-3 text-sm">
-        <p v-if="errorMessage" class="text-destructive">{{ errorMessage }}</p>
-        <p
-          v-if="statusMessage"
-          :class="statusTone === 'success' ? 'text-foreground' : 'text-destructive'"
-        >
-          {{ statusMessage }}
-        </p>
-        <p v-if="hasUnsavedChanges" class="text-muted-foreground">Unsaved changes</p>
-      </div>
-    </div>
 
     <section
       v-if="isLoading"

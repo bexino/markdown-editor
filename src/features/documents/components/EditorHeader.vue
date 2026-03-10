@@ -7,6 +7,8 @@ import ExportMenu from '@/features/documents/components/ExportMenu.vue'
 defineProps<{
   title: string
   isSaving: boolean
+  saveStateLabel?: string
+  saveStateTone?: 'default' | 'error'
 }>()
 
 const emit = defineEmits<{
@@ -42,6 +44,13 @@ const emit = defineEmits<{
           class="h-10 w-full max-w-md rounded-md border border-border bg-input-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
           @input="emit('updateTitle', ($event.target as HTMLInputElement).value)"
         />
+        <p
+          v-if="saveStateLabel"
+          class="hidden shrink-0 text-sm md:block"
+          :class="saveStateTone === 'error' ? 'text-destructive' : 'text-muted-foreground'"
+        >
+          {{ saveStateLabel }}
+        </p>
       </div>
 
       <div class="ml-auto flex items-center gap-2">
