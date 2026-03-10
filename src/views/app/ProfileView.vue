@@ -8,7 +8,12 @@ import UserMenu from '@/components/app/UserMenu.vue'
 import { getCurrentUser, logout } from '@/lib/auth'
 import { documentStorage } from '@/lib/documentStorage'
 import { createProfileForm, getUserDisplayName, getUserInitials } from '@/lib/userProfile'
-import { changePassword, createPasswordForm, updateProfile } from '@/services/profileService'
+import {
+  cancelPendingEmailChange,
+  changePassword,
+  createPasswordForm,
+  updateProfile,
+} from '@/services/profileService'
 import type { PasswordFormData, ProfileFormData } from '@/types/profile'
 
 type FeedbackTone = 'error' | 'success'
@@ -27,8 +32,10 @@ const isEditing = ref(false)
 const isSavingProfile = ref(false)
 const isChangingPassword = ref(false)
 const isDeletingAccount = ref(false)
+const isResolvingPendingEmailChange = ref(false)
 const showDeleteDialog = ref(false)
 const showPasswordDialog = ref(false)
+const showPendingEmailDialog = ref(false)
 const documentCount = ref(0)
 const feedbackMessage = ref('')
 const feedbackTone = ref<FeedbackTone>('success')
@@ -40,6 +47,7 @@ const passwordData = ref<PasswordFormData>(createPasswordForm())
 
 const displayName = computed(() => getUserDisplayName(user.value))
 const initials = computed(() => getUserInitials(user.value))
+const confirmedEmail = computed(() => user.value?.email?.trim().toLowerCase() ?? '')
 const joinedDate = computed(() => {
   if (!user.value?.created_at) {
     return ''
@@ -48,6 +56,15 @@ const joinedDate = computed(() => {
   return joinedDateFormatter.format(new Date(user.value.created_at))
 })
 const pendingEmail = computed(() => user.value?.new_email?.trim() ?? '')
+const hasPendingEmailChange = computed(() => pendingEmail.value.length > 0)
+const normalizedFormEmail = computed(() => formData.value.email.trim().toLowerCase())
+const isAttemptingSecondUnverifiedEmailChange = computed(
+  () =>
+    hasPendingEmailChange.value &&
+    normalizedFormEmail.value.length > 0 &&
+    normalizedFormEmail.value !== confirmedEmail.value &&
+    normalizedFormEmail.value !== pendingEmail.value.trim().toLowerCase()
+)
 
 onMounted(() => {
   void loadProfile()
@@ -83,6 +100,10 @@ function closeDeleteDialog(): void {
   showDeleteDialog.value = false
 }
 
+function closePendingEmailDialog(): void {
+  showPendingEmailDialog.value = false
+}
+
 async function loadProfile(): Promise<void> {
   isLoading.value = true
   feedbackMessage.value = ''
@@ -115,6 +136,11 @@ async function handleSaveProfile(): Promise<void> {
     return
   }
 
+  if (isAttemptingSecondUnverifiedEmailChange.value) {
+    showPendingEmailDialog.value = true
+    return
+  }
+
   isSavingProfile.value = true
   feedbackMessage.value = ''
 
@@ -141,6 +167,54 @@ async function handleSaveProfile(): Promise<void> {
   } finally {
     isSavingProfile.value = false
   }
+}
+
+async function handleCancelPendingEmailAndContinue(): Promise<void> {
+  if (!user.value) {
+    return
+  }
+
+  isResolvingPendingEmailChange.value = true
+  feedbackMessage.value = ''
+
+  try {
+    const refreshedUser = await cancelPendingEmailChange({
+      email: confirmedEmail.value,
+    })
+
+    user.value = refreshedUser
+    showPendingEmailDialog.value = false
+
+    const updatedUser = await updateProfile(refreshedUser, formData.value)
+    user.value = updatedUser
+    isEditing.value = false
+    resetProfileForm()
+
+    if (updatedUser.new_email) {
+      setFeedback(
+        `Previous email change canceled. Confirm your new email at ${updatedUser.new_email} to finish the updated change.`,
+        'success'
+      )
+      return
+    }
+
+    setFeedback('Previous email change canceled. Profile updated successfully.', 'success')
+  } catch (error) {
+    setFeedback(
+      error instanceof Error ? error.message : 'Unable to update your email right now.',
+      'error'
+    )
+  } finally {
+    isResolvingPendingEmailChange.value = false
+  }
+}
+
+function handleWaitForPendingEmailVerification(): void {
+  showPendingEmailDialog.value = false
+  setFeedback(
+    `Confirm ${pendingEmail.value} from your inbox before changing your email again.`,
+    'error'
+  )
 }
 
 function handleCancelEditing(): void {
@@ -303,9 +377,32 @@ async function signOutAndReturnHome(): Promise<void> {
                   </div>
                 </div>
 
-                <p v-if="pendingEmail" class="mt-4 text-sm text-muted-foreground">
-                  Pending email change: confirm {{ pendingEmail }} from your inbox.
-                </p>
+                <div
+                  v-if="pendingEmail"
+                  class="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-900"
+                >
+                  <p>Pending email change: confirm {{ pendingEmail }} from your inbox.</p>
+                  <p class="mt-2 text-amber-800/80">
+                    Your confirmed email is still {{ user.email }} until that verification is
+                    completed.
+                  </p>
+                  <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-amber-900 px-4 py-2 text-sm text-white transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+                      @click="showPendingEmailDialog = true"
+                    >
+                      Resolve Pending Change
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-amber-800/20 bg-transparent px-4 py-2 text-sm text-amber-900 transition-colors hover:bg-amber-500/10 focus-visible:ring-2 focus-visible:ring-ring"
+                      @click="handleWaitForPendingEmailVerification"
+                    >
+                      Keep Waiting
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -384,7 +481,7 @@ async function signOutAndReturnHome(): Promise<void> {
                 <button
                   type="button"
                   class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-                  :disabled="isSavingProfile"
+                  :disabled="isSavingProfile || isResolvingPendingEmailChange"
                   @click="handleSaveProfile"
                 >
                   <svg
@@ -407,7 +504,7 @@ async function signOutAndReturnHome(): Promise<void> {
                 <button
                   type="button"
                   class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  :disabled="isSavingProfile"
+                  :disabled="isSavingProfile || isResolvingPendingEmailChange"
                   @click="handleCancelEditing"
                 >
                   Cancel
@@ -522,6 +619,60 @@ async function signOutAndReturnHome(): Promise<void> {
         </section>
       </div>
     </main>
+
+    <div
+      v-if="showPendingEmailDialog"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      @click.self="closePendingEmailDialog"
+    >
+      <section class="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-lg">
+        <header>
+          <h2 class="text-xl font-semibold">Pending Email Verification</h2>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Your confirmed email is still {{ user?.email }}. You already have a pending change to
+            {{ pendingEmail }}.
+          </p>
+        </header>
+
+        <div class="mt-6 space-y-4 text-sm text-muted-foreground">
+          <div class="rounded-xl border border-border bg-background px-4 py-3">
+            <p class="font-medium text-foreground">Option 1</p>
+            <p class="mt-1">
+              Cancel the pending email change, invalidate that verification flow, and continue with
+              this new email update.
+            </p>
+          </div>
+
+          <div class="rounded-xl border border-border bg-background px-4 py-3">
+            <p class="font-medium text-foreground">Option 2</p>
+            <p class="mt-1">
+              Keep the current pending change and wait until {{ pendingEmail }} is verified before
+              changing your email again.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            :disabled="isResolvingPendingEmailChange"
+            @click="handleWaitForPendingEmailVerification"
+          >
+            Wait for Verification
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="isResolvingPendingEmailChange"
+            @click="handleCancelPendingEmailAndContinue"
+          >
+            {{ isResolvingPendingEmailChange ? 'Updating...' : 'Cancel Pending Change and Continue' }}
+          </button>
+        </div>
+      </section>
+    </div>
 
     <div
       v-if="showPasswordDialog"

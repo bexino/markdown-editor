@@ -8,3 +8,7 @@ export interface PasswordFormData {
   newPassword: string
   confirmPassword: string
 }
+
+export interface CancelPendingEmailChangePayload {
+  email: string
+}

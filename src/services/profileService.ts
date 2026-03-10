@@ -2,7 +2,11 @@ import type { User } from '@supabase/supabase-js'
 
 import { getAuthCallbackUrl } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
-import type { PasswordFormData, ProfileFormData } from '@/types/profile'
+import type {
+  CancelPendingEmailChangePayload,
+  PasswordFormData,
+  ProfileFormData,
+} from '@/types/profile'
 
 export function createPasswordForm(): PasswordFormData {
   return {
@@ -14,20 +18,26 @@ export function createPasswordForm(): PasswordFormData {
 
 export async function updateProfile(user: User, formData: ProfileFormData): Promise<User> {
   const name = formData.name.trim()
-  const email = formData.email.trim()
+  const email = formData.email.trim().toLowerCase()
+  const currentEmail = user.email?.trim().toLowerCase() ?? ''
 
   if (!name || !email) {
     throw new Error('Please fill in all fields.')
   }
 
-  const { data, error } = await supabase.auth.updateUser(
-    {
-      email,
-      data: {
-        ...user.user_metadata,
-        full_name: name,
-      },
+  const attributes: Parameters<typeof supabase.auth.updateUser>[0] = {
+    data: {
+      ...user.user_metadata,
+      full_name: name,
     },
+  }
+
+  if (email !== currentEmail) {
+    attributes.email = email
+  }
+
+  const { data, error } = await supabase.auth.updateUser(
+    attributes,
     {
       emailRedirectTo: getAuthCallbackUrl(),
     }
@@ -42,6 +52,53 @@ export async function updateProfile(user: User, formData: ProfileFormData): Prom
   }
 
   return data.user
+}
+
+export async function cancelPendingEmailChange(
+  payload: CancelPendingEmailChangePayload
+): Promise<User> {
+  const email = payload.email.trim().toLowerCase()
+
+  if (!email) {
+    throw new Error('The confirmed email is required to cancel the pending change.')
+  }
+
+  const { data, error } = await supabase.functions.invoke('cancel-pending-email-change', {
+    body: { email },
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  if (data?.error) {
+    throw new Error(data.error)
+  }
+
+  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+
+  if (refreshError) {
+    throw new Error(refreshError.message)
+  }
+
+  if (refreshData.user) {
+    return refreshData.user
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError) {
+    throw new Error(userError.message)
+  }
+
+  if (!user) {
+    throw new Error('Unable to refresh your profile right now.')
+  }
+
+  return user
 }
 
 export async function changePassword(formData: PasswordFormData): Promise<void> {
