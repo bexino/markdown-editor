@@ -16,6 +16,7 @@ type EditorIconName =
   | 'quote'
   | 'link'
   | 'image'
+  | 'table'
 
 interface ToolbarAction {
   id: string
@@ -89,6 +90,13 @@ const groups: ToolbarGroup[] = [
         label: 'Image',
         type: 'insert',
         text: '![alt text](url)',
+      },
+      {
+        id: 'table',
+        icon: 'table',
+        label: 'Table',
+        type: 'insert',
+        text: '| Header 1 | Header 2 | Header 3 |\n| --- | --- | --- |\n| Cell 1 | Cell 2 | Cell 3 |\n',
       },
     ],
   },
