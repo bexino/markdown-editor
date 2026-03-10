@@ -16,6 +16,11 @@ const mobilePreview = ref<HTMLElement | null>(null)
 const desktopPreview = ref<HTMLElement | null>(null)
 const isResizing = ref(false)
 const leftPanelSize = ref(50)
+const showEditorBadge = ref(false)
+const showPreviewBadge = ref(false)
+
+let editorBadgeTimeout: number | undefined
+let previewBadgeTimeout: number | undefined
 
 const gridTemplateColumns = computed(() => {
   return `${leftPanelSize.value}% 10px minmax(0, 1fr)`
@@ -55,6 +60,32 @@ function setPreviewRef(
   }
 
   desktopPreview.value = previewElement
+}
+
+function revealBadge(target: 'editor' | 'preview'): void {
+  if (target === 'editor') {
+    showEditorBadge.value = true
+
+    if (editorBadgeTimeout) {
+      window.clearTimeout(editorBadgeTimeout)
+    }
+
+    editorBadgeTimeout = window.setTimeout(() => {
+      showEditorBadge.value = false
+    }, 1200)
+
+    return
+  }
+
+  showPreviewBadge.value = true
+
+  if (previewBadgeTimeout) {
+    window.clearTimeout(previewBadgeTimeout)
+  }
+
+  previewBadgeTimeout = window.setTimeout(() => {
+    showPreviewBadge.value = false
+  }, 1200)
 }
 
 function updateContent(value: string): void {
@@ -166,15 +197,26 @@ defineExpose({
 
 onBeforeUnmount(() => {
   isResizing.value = false
+
+  if (editorBadgeTimeout) {
+    window.clearTimeout(editorBadgeTimeout)
+  }
+
+  if (previewBadgeTimeout) {
+    window.clearTimeout(previewBadgeTimeout)
+  }
 })
 </script>
 
 <template>
   <div class="flex-1 overflow-hidden">
     <div class="flex h-full flex-col md:hidden">
-      <section class="flex min-h-0 flex-1 flex-col border-b border-border">
-        <div class="border-b border-border bg-muted/30 px-4 py-2">
-          <span class="text-sm font-medium">Markdown</span>
+      <section class="relative flex min-h-0 flex-1 flex-col border-b border-border">
+        <div
+          class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm transition-opacity duration-200"
+          :class="showEditorBadge ? 'opacity-100' : 'opacity-0'"
+        >
+          Markdown
         </div>
         <textarea
           :ref="setTextareaRef"
@@ -182,16 +224,21 @@ onBeforeUnmount(() => {
           class="min-h-[320px] flex-1 resize-none bg-background px-4 py-4 font-mono text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Start writing your markdown here..."
           @input="updateContent(($event.target as HTMLTextAreaElement).value)"
+          @scroll="revealBadge('editor')"
         />
       </section>
 
-      <section class="flex min-h-0 flex-1 flex-col">
-        <div class="border-b border-border bg-muted/30 px-4 py-2">
-          <span class="text-sm font-medium">Preview</span>
+      <section class="relative flex min-h-0 flex-1 flex-col">
+        <div
+          class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm transition-opacity duration-200"
+          :class="showPreviewBadge ? 'opacity-100' : 'opacity-0'"
+        >
+          Preview
         </div>
         <div
           :ref="(element) => setPreviewRef(element, 'mobile')"
           class="flex-1 overflow-auto bg-muted/10 p-6"
+          @scroll="revealBadge('preview')"
         >
           <div class="mx-auto max-w-3xl">
             <MarkdownPreview :content="content" />
@@ -201,9 +248,12 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="hidden h-full md:grid" :style="{ gridTemplateColumns }">
-      <section class="flex min-w-0 flex-col overflow-hidden">
-        <div class="border-b border-border bg-muted/30 px-4 py-2">
-          <span class="text-sm font-medium">Markdown</span>
+      <section class="relative flex min-w-0 flex-col overflow-hidden">
+        <div
+          class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm transition-opacity duration-200"
+          :class="showEditorBadge ? 'opacity-100' : 'opacity-0'"
+        >
+          Markdown
         </div>
         <textarea
           :ref="setTextareaRef"
@@ -211,6 +261,7 @@ onBeforeUnmount(() => {
           class="h-full min-h-0 w-full flex-1 resize-none bg-background px-4 py-4 font-mono text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Start writing your markdown here..."
           @input="updateContent(($event.target as HTMLTextAreaElement).value)"
+          @scroll="revealBadge('editor')"
         />
       </section>
 
@@ -225,13 +276,17 @@ onBeforeUnmount(() => {
         <div class="flex h-10 w-1 items-center justify-center rounded-full bg-border transition-colors group-hover:bg-foreground/30"></div>
       </div>
 
-      <section class="flex min-w-0 flex-col overflow-hidden">
-        <div class="border-b border-border bg-muted/30 px-4 py-2">
-          <span class="text-sm font-medium">Preview</span>
+      <section class="relative flex min-w-0 flex-col overflow-hidden">
+        <div
+          class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm transition-opacity duration-200"
+          :class="showPreviewBadge ? 'opacity-100' : 'opacity-0'"
+        >
+          Preview
         </div>
         <div
           :ref="(element) => setPreviewRef(element, 'desktop')"
           class="flex-1 overflow-auto bg-muted/10 p-6"
+          @scroll="revealBadge('preview')"
         >
           <div class="mx-auto max-w-3xl">
             <MarkdownPreview :content="content" />

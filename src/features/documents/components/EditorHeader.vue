@@ -34,7 +34,7 @@ const emit = defineEmits<{
       </button>
 
       <div class="flex min-w-0 flex-1 items-center gap-2">
-        <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <span class="flex size-9 shrink-0 items-center justify-center text-muted-foreground">
           <EditorIcon name="file-text" />
         </span>
         <input
