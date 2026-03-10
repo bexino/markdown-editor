@@ -3,16 +3,16 @@ import type { User } from '@supabase/supabase-js'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { getCurrentUser, logout } from '@/lib/auth'
-import { documentStorage } from '@/lib/documentStorage'
-import { createProfileForm, getUserDisplayName, getUserInitials } from '@/lib/userProfile'
+import { getCurrentUser, logout } from '@/shared/lib/auth'
+import { documentStorage } from '@/features/documents/services/documentStorage'
+import { createProfileForm, getUserDisplayName, getUserInitials } from '@/features/profile/lib/userProfile'
 import {
   cancelPendingEmailChange,
   changePassword,
   createPasswordForm,
   updateProfile,
-} from '@/services/profileService'
-import type { PasswordFormData, ProfileFeedbackTone, ProfileFormData } from '@/types/profile'
+} from '@/features/profile/services/profileService'
+import type { PasswordFormData, ProfileFeedbackTone, ProfileFormData } from '@/features/profile/types/profile'
 
 const joinedDateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',

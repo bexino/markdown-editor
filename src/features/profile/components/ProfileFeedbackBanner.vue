@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProfileFeedbackTone } from '@/types/profile'
+import type { ProfileFeedbackTone } from '@/features/profile/types/profile'
 
 defineProps<{
   message: string

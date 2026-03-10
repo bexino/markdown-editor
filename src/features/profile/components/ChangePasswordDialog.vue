@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PasswordFormData } from '@/types/profile'
+import type { PasswordFormData } from '@/features/profile/types/profile'
 
 const passwordData = defineModel<PasswordFormData>('passwordData', { required: true })
 

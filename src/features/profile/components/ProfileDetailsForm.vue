@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProfileFormData } from '@/types/profile'
+import type { ProfileFormData } from '@/features/profile/types/profile'
 
 const formData = defineModel<ProfileFormData>('formData', { required: true })
 
