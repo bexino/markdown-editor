@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import DocumentFoldersDialog from '@/features/documents/components/DocumentFoldersDialog.vue'
@@ -32,6 +32,8 @@ const currentFolderId = ref<string | null>(null)
 const searchQuery = ref('')
 const deleteId = ref<string | null>(null)
 const deleteType = ref<'document' | 'folder'>('document')
+const selectedDocumentIds = ref<string[]>([])
+const isBulkDeleteMode = ref(false)
 const isLoading = ref(false)
 const feedbackMessage = ref('')
 const isCreateFolderDialogOpen = ref(false)
@@ -192,6 +194,22 @@ const managedFolderDocumentIds = computed(() => {
   return documentIdsByFolderId.value[manageFolderDocumentsId.value] ?? []
 })
 
+const hasVisibleDocuments = computed(() => sortedDocuments.value.length > 0)
+
+const visibleDocumentIds = computed(() => sortedDocuments.value.map((document) => document.id))
+
+const selectedVisibleDocumentIds = computed(() => {
+  const visibleDocumentIdSet = new Set(visibleDocumentIds.value)
+  return selectedDocumentIds.value.filter((id) => visibleDocumentIdSet.has(id))
+})
+
+const selectedDocumentCount = computed(() => selectedVisibleDocumentIds.value.length)
+
+watch(visibleDocumentIds, (documentIds) => {
+  const visibleDocumentIdSet = new Set(documentIds)
+  selectedDocumentIds.value = selectedDocumentIds.value.filter((id) => visibleDocumentIdSet.has(id))
+})
+
 onMounted(() => {
   void loadWorkspace()
 })
@@ -217,6 +235,9 @@ async function loadWorkspace(): Promise<void> {
       folderRecords.some((folder) => folder.id === id),
     )
     documentFolderIds.value = folderIdsByDocumentId
+    selectedDocumentIds.value = selectedDocumentIds.value.filter((id) =>
+      documentRecords.some((document) => document.id === id),
+    )
   } catch (error) {
     feedbackMessage.value =
       error instanceof Error ? error.message : 'Unable to load your workspace right now.'
@@ -316,6 +337,26 @@ function closeDeleteDialog(): void {
   deleteId.value = null
 }
 
+function toggleBulkDeleteMode(): void {
+  isBulkDeleteMode.value = !isBulkDeleteMode.value
+  selectedDocumentIds.value = []
+}
+
+function toggleSelectedDocument(id: string): void {
+  selectedDocumentIds.value = selectedDocumentIds.value.includes(id)
+    ? selectedDocumentIds.value.filter((entryId) => entryId !== id)
+    : [...selectedDocumentIds.value, id]
+}
+
+function promptDeleteSelectedDocuments(): void {
+  if (selectedVisibleDocumentIds.value.length === 0) {
+    return
+  }
+
+  deleteType.value = 'document'
+  deleteId.value = '__bulk__'
+}
+
 async function handleDelete(): Promise<void> {
   if (!deleteId.value) {
     return
@@ -324,7 +365,11 @@ async function handleDelete(): Promise<void> {
   feedbackMessage.value = ''
 
   try {
-    if (deleteType.value === 'document') {
+    if (deleteType.value === 'document' && deleteId.value === '__bulk__') {
+      await Promise.all(selectedVisibleDocumentIds.value.map((id) => documentStorage.delete(id)))
+      selectedDocumentIds.value = []
+      isBulkDeleteMode.value = false
+    } else if (deleteType.value === 'document') {
       await documentStorage.delete(deleteId.value)
     } else {
       await folderStorage.delete(deleteId.value)
@@ -349,10 +394,14 @@ async function openDocument(id: string): Promise<void> {
 
 function openFolder(id: string): void {
   currentFolderId.value = id
+  selectedDocumentIds.value = []
+  isBulkDeleteMode.value = false
 }
 
 function openHome(): void {
   currentFolderId.value = null
+  selectedDocumentIds.value = []
+  isBulkDeleteMode.value = false
 }
 
 function openRenameFolder(id: string): void {
@@ -556,6 +605,7 @@ function formatCreatedAt(value: string): string {
           </label>
 
           <button
+            v-if="!isBulkDeleteMode"
             type="button"
             class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
             @click="currentFolderId ? openManageFolderDocuments(currentFolderId) : (isCreateFolderDialogOpen = true)"
@@ -579,7 +629,30 @@ function formatCreatedAt(value: string): string {
             </span>
           </button>
 
+          <template v-if="isBulkDeleteMode">
+            <button
+              type="button"
+              class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              @click="toggleBulkDeleteMode"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="selectedDocumentCount === 0"
+              @click="promptDeleteSelectedDocuments"
+            >
+              Delete selected
+              <span class="rounded-full bg-black/10 px-2 py-0.5 text-xs text-current">
+                {{ selectedDocumentCount }}
+              </span>
+            </button>
+          </template>
+
           <button
+            v-if="!isBulkDeleteMode"
             type="button"
             class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
             @click="handleCreate"
@@ -598,6 +671,20 @@ function formatCreatedAt(value: string): string {
               <path d="M12 5v14" />
             </svg>
             New Document
+          </button>
+
+          <button
+            v-if="hasVisibleDocuments"
+            type="button"
+            class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-opacity focus-visible:ring-2 focus-visible:ring-ring"
+            :class="
+              isBulkDeleteMode
+                ? 'border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground'
+                : 'bg-destructive text-destructive-foreground hover:opacity-90'
+            "
+            @click="toggleBulkDeleteMode"
+          >
+            {{ isBulkDeleteMode ? 'Cancel' : 'Delete' }}
           </button>
         </div>
       </div>
@@ -719,9 +806,12 @@ function formatCreatedAt(value: string): string {
             :preview="getDocumentPreview(document.content)"
             :formatted-updated-at="formatUpdatedAt(document.updatedAt)"
             :is-pinned="pinnedDocumentIds.includes(document.id)"
+            :is-selection-mode="isBulkDeleteMode"
+            :is-selected="selectedDocumentIds.includes(document.id)"
             @open="openDocument"
             @manage-folders="openManageFolders"
             @toggle-pin="handleToggleDocumentPin"
+            @toggle-selection="toggleSelectedDocument"
             @duplicate="handleDuplicate"
             @delete="promptDeleteDocument"
           />
@@ -779,12 +869,20 @@ function formatCreatedAt(value: string): string {
       <section class="w-full max-w-md rounded-xl border border-border bg-card p-6 text-card-foreground shadow-lg">
         <header>
           <h2 class="text-xl font-semibold">
-            Delete {{ deleteType === 'folder' ? 'Folder' : 'Document' }}
+            {{
+              deleteType === 'folder'
+                ? 'Delete Folder'
+                : deleteId === '__bulk__'
+                  ? 'Delete Documents'
+                  : 'Delete Document'
+            }}
           </h2>
           <p class="mt-2 text-sm text-muted-foreground">
             {{
               deleteType === 'folder'
                 ? 'Are you sure you want to delete this folder? Document links to this folder will be removed. This action cannot be undone.'
+                : deleteId === '__bulk__'
+                  ? `Are you sure you want to delete ${selectedDocumentCount} documents? This action cannot be undone.`
                 : 'Are you sure you want to delete this document? This action cannot be undone.'
             }}
           </p>

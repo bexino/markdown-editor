@@ -7,6 +7,8 @@ defineProps<{
   preview: string
   formattedUpdatedAt: string
   isPinned: boolean
+  isSelectionMode?: boolean
+  isSelected?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -15,6 +17,7 @@ const emit = defineEmits<{
   togglePin: [id: string]
   duplicate: [id: string]
   delete: [id: string]
+  toggleSelection: [id: string]
 }>()
 
 function handleOpen(id: string): void {
@@ -36,18 +39,35 @@ function handleManageFolders(id: string): void {
 function handleTogglePin(id: string): void {
   emit('togglePin', id)
 }
+
+function handleToggleSelection(id: string): void {
+  emit('toggleSelection', id)
+}
 </script>
 
 <template>
   <article
-    class="group cursor-pointer rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-ring"
+    class="group rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-ring"
+    :class="[
+      isSelectionMode ? 'cursor-default' : 'cursor-pointer',
+      isSelected ? 'border-primary ring-2 ring-primary/20' : '',
+    ]"
     tabindex="0"
-    @click="handleOpen(document.id)"
-    @keydown.enter.prevent="handleOpen(document.id)"
-    @keydown.space.prevent="handleOpen(document.id)"
+    @click="isSelectionMode ? handleToggleSelection(document.id) : handleOpen(document.id)"
+    @keydown.enter.prevent="isSelectionMode ? handleToggleSelection(document.id) : handleOpen(document.id)"
+    @keydown.space.prevent="isSelectionMode ? handleToggleSelection(document.id) : handleOpen(document.id)"
   >
     <div class="mb-3 flex items-start justify-between gap-3">
       <div class="flex min-w-0 flex-1 items-center gap-2">
+        <input
+          v-if="isSelectionMode"
+          :checked="isSelected"
+          type="checkbox"
+          class="size-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+          :aria-label="`Select ${document.name}`"
+          @click.stop
+          @change="handleToggleSelection(document.id)"
+        />
         <svg
           class="size-5 shrink-0 text-primary"
           viewBox="0 0 24 24"
@@ -81,7 +101,10 @@ function handleTogglePin(id: string): void {
         </svg>
       </div>
 
-      <div class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      <div
+        v-if="!isSelectionMode"
+        class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+      >
         <ActionMenu
           ariaLabel="Document actions"
           :items="[
