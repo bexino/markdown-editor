@@ -1,6 +1,6 @@
 # MarkDocs
 
-MarkDocs is a markdown document management app built with Vue, TypeScript, Tailwind CSS, and Supabase. It supports live markdown preview and documenent management.
+MarkDocs is a markdown document management app built with Vue, TypeScript, Tailwind CSS, and Supabase. It supports live markdown preview and document management.
 
 ## Features
 
