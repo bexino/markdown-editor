@@ -1,21 +1,47 @@
 <script setup lang="ts">
-import '@/assets/markdown.css'
-
 import BenefitCard from '@/features/landing/components/BenefitCard.vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import FeatureCard from '@/features/landing/components/FeatureCard.vue'
+import LandingBenefitMockup from '@/features/landing/components/LandingBenefitMockup.vue'
+import LandingEditorMockup from '@/features/landing/components/LandingEditorMockup.vue'
 import { benefits, featureCards } from '@/features/landing/data/landing'
 
 const router = useRouter()
+const root = ref<HTMLElement | null>(null)
+
+function handleWheel(event: WheelEvent): void {
+  if (!root.value || event.ctrlKey) {
+    return
+  }
+
+  event.preventDefault()
+  window.scrollBy({
+    top: event.deltaY * 0.45,
+    left: 0,
+    behavior: 'auto',
+  })
+}
 
 async function navigateTo(path: string): Promise<void> {
   await router.push(path)
 }
+
+onMounted(() => {
+  root.value?.addEventListener('wheel', handleWheel, { passive: false })
+})
+
+onBeforeUnmount(() => {
+  root.value?.removeEventListener('wheel', handleWheel)
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground">
+  <div
+    ref="root"
+    class="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground"
+  >
     <header class="sticky top-0 z-50 border-b bg-card/50 backdrop-blur-sm">
       <div
         class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
@@ -75,7 +101,7 @@ async function navigateTo(path: string): Promise<void> {
             class="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
             @click="navigateTo('/register')"
           >
-            Start Writing Free
+            Start Writing
             <svg
               class="size-4"
               viewBox="0 0 24 24"
@@ -100,191 +126,7 @@ async function navigateTo(path: string): Promise<void> {
         </div>
       </div>
 
-      <div class="mt-16 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        <div class="border-b border-border bg-card px-4 py-3">
-          <div class="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              class="inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground"
-            >
-              <svg
-                class="size-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-              <span class="hidden sm:inline">Back</span>
-            </button>
-
-            <div class="flex min-w-0 flex-1 items-center gap-2">
-              <span class="flex size-9 shrink-0 items-center justify-center text-muted-foreground">
-                <svg
-                  class="size-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <path d="M14 2v6h6" />
-                  <path d="M16 13H8" />
-                  <path d="M16 17H8" />
-                  <path d="M10 9H8" />
-                </svg>
-              </span>
-              <div class="flex h-10 w-full max-w-md items-center rounded-md border border-border bg-input-background px-3 font-mono text-sm text-foreground">
-                editor.md
-              </div>
-              <p class="hidden shrink-0 text-sm text-muted-foreground md:block">Automatically saved</p>
-            </div>
-
-            <div class="ml-auto flex items-center gap-2">
-              <div class="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground">
-                <svg
-                  class="size-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                <span class="hidden sm:inline">Preview</span>
-              </div>
-              <div class="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm text-primary-foreground">
-                <svg
-                  class="size-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                  <path d="M17 21v-8H7v8" />
-                  <path d="M7 3v5h8" />
-                </svg>
-                <span class="hidden sm:inline">Save</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="border-b border-border bg-muted/30 px-4 py-2">
-          <div class="flex items-center gap-1 overflow-hidden">
-            <div
-              v-for="index in 10"
-              :key="index"
-              class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground"
-            >
-              <div class="h-4 w-4 rounded-sm border border-border/80"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="hidden h-[420px] md:grid md:grid-cols-[1fr_10px_1fr]">
-          <section class="relative flex min-w-0 flex-col overflow-hidden bg-background">
-            <div
-              class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm"
-            >
-              Markdown
-            </div>
-            <div class="h-full w-full px-4 py-4 font-mono text-sm leading-7 text-foreground">
-              <p class="text-primary"># Hello World</p>
-              <p>This is **markdown**</p>
-              <p></p>
-              <p>## Notes</p>
-              <p>- Live preview</p>
-              <p>- Syntax highlighting</p>
-              <p>- Full-page preview</p>
-            </div>
-          </section>
-
-          <div class="flex items-center justify-center bg-muted/40">
-            <div class="h-10 w-1 rounded-full bg-border"></div>
-          </div>
-
-          <section class="relative flex min-w-0 flex-col overflow-hidden">
-            <div
-              class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm"
-            >
-              Preview
-            </div>
-            <div class="flex-1 overflow-hidden bg-muted/10 p-6">
-              <div class="mx-auto max-w-3xl rounded-xl">
-                <div class="prose max-w-none">
-                  <h1>Hello World</h1>
-                  <p>
-                    This is <strong>markdown</strong>
-                  </p>
-                  <h2>Notes</h2>
-                  <ul>
-                    <li>Live preview</li>
-                    <li>Syntax highlighting</li>
-                    <li>Full-page preview</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div class="space-y-4 p-4 md:hidden">
-          <section class="relative overflow-hidden rounded-xl border border-border bg-background">
-            <div
-              class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm"
-            >
-              Markdown
-            </div>
-            <div class="min-h-[220px] px-4 py-4 font-mono text-sm leading-7 text-foreground">
-              <p class="text-primary"># Hello World</p>
-              <p>This is **markdown**</p>
-              <p></p>
-              <p>## Notes</p>
-              <p>- Live preview</p>
-              <p>- Syntax highlighting</p>
-              <p>- Full-page preview</p>
-            </div>
-          </section>
-
-          <section class="relative overflow-hidden rounded-xl border border-border bg-muted/10">
-            <div
-              class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm"
-            >
-              Preview
-            </div>
-            <div class="p-6">
-              <div class="prose max-w-none">
-                <h1>Hello World</h1>
-                <p>
-                  This is <strong>markdown</strong>
-                </p>
-                <h2>Notes</h2>
-                <ul>
-                  <li>Live preview</li>
-                  <li>Syntax highlighting</li>
-                  <li>Full-page preview</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
+      <LandingEditorMockup class="mt-16" />
     </section>
 
     <section class="bg-muted/30 py-16 md:py-24">
@@ -412,24 +254,7 @@ async function navigateTo(path: string): Promise<void> {
             </div>
           </div>
 
-          <div class="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 p-8 lg:p-12">
-            <div class="space-y-6">
-              <div class="rounded-lg border bg-card p-4">
-                <div class="mb-2 flex items-center gap-2">
-                  <div class="size-3 rounded-full bg-primary"></div>
-                  <span class="font-mono text-sm text-muted-foreground">editor.md</span>
-                </div>
-                <div class="space-y-1 font-mono text-sm">
-                  <div class="text-primary"># Hello World</div>
-                  <div class="text-muted-foreground">This is **markdown**</div>
-                </div>
-              </div>
-              <div class="rounded-lg border bg-card p-4">
-                <div class="mb-2 text-2xl font-bold">Hello World</div>
-                <div class="text-muted-foreground">This is <strong>markdown</strong></div>
-              </div>
-            </div>
-          </div>
+          <LandingBenefitMockup />
         </div>
       </div>
     </section>
@@ -445,7 +270,7 @@ async function navigateTo(path: string): Promise<void> {
           class="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-secondary px-6 py-3 text-base font-medium text-secondary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
           @click="navigateTo('/register')"
         >
-          Create Free Account
+          Create Account
           <svg
             class="size-4"
             viewBox="0 0 24 24"
