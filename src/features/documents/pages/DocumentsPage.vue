@@ -539,7 +539,7 @@ function formatCreatedAt(value: string): string {
     <header class="border-b border-border bg-card px-6 py-4">
       <div class="mx-auto max-w-6xl">
         <div class="mb-4 flex items-center justify-between gap-4">
-          <h1 class="text-3xl font-bold">Markdown Editor</h1>
+          <h1 class="text-3xl font-bold">MarkDocs</h1>
           <UserMenu />
         </div>
 

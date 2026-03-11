@@ -1,4 +1,4 @@
-export const defaultContent = `# Welcome to Markdown Editor
+export const defaultContent = `# Welcome to MarkDocs!
 
 ## Getting Started
 
@@ -87,5 +87,5 @@ print(fibonacci(10))
 
 ### Start Creating!
 
-Delete this content and start writing your own markdown documents. Happy writing! 🎉
+Delete this content and start writing your own markdown documents. Happy writing!
 `
