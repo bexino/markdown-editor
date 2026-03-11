@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import BenefitCard from '@/features/landing/components/BenefitCard.vue'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import FeatureCard from '@/features/landing/components/FeatureCard.vue'
@@ -9,39 +8,14 @@ import LandingEditorMockup from '@/features/landing/components/LandingEditorMock
 import { benefits, featureCards } from '@/features/landing/data/landing'
 
 const router = useRouter()
-const root = ref<HTMLElement | null>(null)
-
-function handleWheel(event: WheelEvent): void {
-  if (!root.value || event.ctrlKey) {
-    return
-  }
-
-  event.preventDefault()
-  window.scrollBy({
-    top: event.deltaY * 0.45,
-    left: 0,
-    behavior: 'auto',
-  })
-}
 
 async function navigateTo(path: string): Promise<void> {
   await router.push(path)
 }
-
-onMounted(() => {
-  root.value?.addEventListener('wheel', handleWheel, { passive: false })
-})
-
-onBeforeUnmount(() => {
-  root.value?.removeEventListener('wheel', handleWheel)
-})
 </script>
 
 <template>
-  <div
-    ref="root"
-    class="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground"
-  >
+  <div class="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground">
     <header class="sticky top-0 z-50 border-b bg-card/50 backdrop-blur-sm">
       <div
         class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
