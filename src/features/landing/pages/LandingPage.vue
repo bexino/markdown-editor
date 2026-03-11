@@ -465,7 +465,7 @@ async function navigateTo(path: string): Promise<void> {
 
     <footer class="border-t bg-card py-8">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div class="flex flex-col items-center gap-4">
           <div class="flex items-center gap-2">
             <svg
               class="size-6 text-primary"
@@ -485,7 +485,83 @@ async function navigateTo(path: string): Promise<void> {
             </svg>
             <span class="font-semibold">MarkDocs</span>
           </div>
-          <p class="text-sm text-muted-foreground">© 2026 MarkDocs. All rights reserved.</p>
+          <p class="text-sm text-muted-foreground">
+            © 2026 MarkDocs by
+            <a
+              href="https://www.giliannereyes.com/"
+              target="_blank"
+              rel="noreferrer"
+              class="transition-colors hover:text-foreground"
+            >
+              Gilianne Reyes
+            </a>
+            . All rights reserved.
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
+            <a
+              href="https://www.giliannereyes.com/"
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <span>Website</span>
+              <svg
+                class="size-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M7 17 17 7" />
+                <path d="M7 7h10v10" />
+              </svg>
+            </a>
+            <a
+              href="https://github.com/giliannereyes"
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <span>GitHub</span>
+              <svg
+                class="size-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M7 17 17 7" />
+                <path d="M7 7h10v10" />
+              </svg>
+            </a>
+            <a
+              href="https://www.linkedin.com/in/giliannereyes/"
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <span>LinkedIn</span>
+              <svg
+                class="size-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M7 17 17 7" />
+                <path d="M7 7h10v10" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </footer>
