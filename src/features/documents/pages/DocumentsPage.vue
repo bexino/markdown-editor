@@ -680,11 +680,11 @@ function formatCreatedAt(value: string): string {
             :class="
               isBulkDeleteMode
                 ? 'border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground'
-                : 'bg-destructive text-destructive-foreground hover:opacity-90'
+                : 'border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground'
             "
             @click="toggleBulkDeleteMode"
           >
-            {{ isBulkDeleteMode ? 'Cancel' : 'Delete' }}
+            {{ isBulkDeleteMode ? 'Cancel' : 'Select' }}
           </button>
         </div>
       </div>
