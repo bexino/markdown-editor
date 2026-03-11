@@ -6,11 +6,13 @@ defineProps<{
   document: DocumentRecord
   preview: string
   formattedUpdatedAt: string
+  isPinned: boolean
 }>()
 
 const emit = defineEmits<{
   open: [id: string]
   manageFolders: [id: string]
+  togglePin: [id: string]
   duplicate: [id: string]
   delete: [id: string]
 }>()
@@ -29,6 +31,10 @@ function handleDuplicate(id: string): void {
 
 function handleManageFolders(id: string): void {
   emit('manageFolders', id)
+}
+
+function handleTogglePin(id: string): void {
+  emit('togglePin', id)
 }
 </script>
 
@@ -59,6 +65,20 @@ function handleManageFolders(id: string): void {
           <path d="M10 9H8" />
         </svg>
         <h3 class="truncate font-semibold">{{ document.name }}</h3>
+        <svg
+          v-if="isPinned"
+          class="size-4 shrink-0 text-foreground"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 17v5" />
+          <path d="M8 3h8l-1 7 3 2v1H6v-1l3-2-1-7Z" />
+        </svg>
       </div>
 
       <div class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
@@ -66,12 +86,15 @@ function handleManageFolders(id: string): void {
           ariaLabel="Document actions"
           :items="[
             { id: 'folders', label: 'Manage folders' },
+            { id: 'pin', label: isPinned ? 'Unpin' : 'Pin' },
             { id: 'duplicate', label: 'Duplicate' },
             { id: 'delete', label: 'Delete', destructive: true },
           ]"
           @select="
             $event === 'folders'
               ? handleManageFolders(document.id)
+              : $event === 'pin'
+                ? handleTogglePin(document.id)
               : $event === 'duplicate'
                 ? handleDuplicate(document.id)
                 : handleDelete(document.id)

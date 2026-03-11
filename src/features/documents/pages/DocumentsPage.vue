@@ -12,6 +12,7 @@ import { defaultContent } from '@/features/documents/lib/defaultContent'
 import { documentStorage, type DocumentRecord } from '@/features/documents/services/documentStorage'
 import { documentFolderStorage } from '@/features/documents/services/documentFolderStorage'
 import { folderStorage, type FolderRecord } from '@/features/documents/services/folderStorage'
+import { pinnedItemStorage } from '@/features/documents/services/pinnedItemStorage'
 
 const router = useRouter()
 
@@ -34,6 +35,26 @@ const isCreateFolderDialogOpen = ref(false)
 const renameFolderId = ref<string | null>(null)
 const renameFolderName = ref('')
 const manageDocumentId = ref<string | null>(null)
+const pinnedDocumentIds = ref<string[]>([])
+const pinnedFolderIds = ref<string[]>([])
+
+function sortByPinnedAndName<T extends { id: string; name: string }>(
+  entries: T[],
+  pinnedIds: string[],
+): T[] {
+  const pinnedIdSet = new Set(pinnedIds)
+
+  return [...entries].sort((left, right) => {
+    const leftPinned = pinnedIdSet.has(left.id)
+    const rightPinned = pinnedIdSet.has(right.id)
+
+    if (leftPinned !== rightPinned) {
+      return leftPinned ? -1 : 1
+    }
+
+    return left.name.localeCompare(right.name)
+  })
+}
 
 const breadcrumbs = computed(() => {
   if (!currentFolderId.value) {
@@ -82,6 +103,12 @@ const filteredFolders = computed(() => {
   return folders.value.filter((folder) => folder.name.toLowerCase().includes(query))
 })
 
+const sortedDocuments = computed(() =>
+  sortByPinnedAndName(filteredDocuments.value, pinnedDocumentIds.value),
+)
+
+const sortedFolders = computed(() => sortByPinnedAndName(filteredFolders.value, pinnedFolderIds.value))
+
 const selectedDocumentFolderIds = computed(() => {
   if (!manageDocumentId.value) {
     return []
@@ -101,12 +128,19 @@ async function loadWorkspace(): Promise<void> {
   try {
     const documentRecords = await documentStorage.getAll()
     const folderRecords = await folderStorage.getAll()
+    const pinnedItems = await pinnedItemStorage.getAll()
     const folderIdsByDocumentId = await documentFolderStorage.getFolderIdsByDocumentIds(
       documentRecords.map((document) => document.id),
     )
 
     documents.value = documentRecords
     folders.value = folderRecords
+    pinnedDocumentIds.value = pinnedItems.documentIds.filter((id) =>
+      documentRecords.some((document) => document.id === id),
+    )
+    pinnedFolderIds.value = pinnedItems.folderIds.filter((id) =>
+      folderRecords.some((folder) => folder.id === id),
+    )
     documentFolderIds.value = folderIdsByDocumentId
   } catch (error) {
     feedbackMessage.value =
@@ -284,6 +318,42 @@ async function handleUpdateDocumentFolders(folderIds: string[]): Promise<void> {
   } catch (error) {
     feedbackMessage.value =
       error instanceof Error ? error.message : 'Unable to update document folders right now.'
+  }
+}
+
+async function handleToggleDocumentPin(id: string): Promise<void> {
+  feedbackMessage.value = ''
+
+  try {
+    if (pinnedDocumentIds.value.includes(id)) {
+      await pinnedItemStorage.unpinDocument(id)
+      pinnedDocumentIds.value = pinnedDocumentIds.value.filter((entryId) => entryId !== id)
+      return
+    }
+
+    await pinnedItemStorage.pinDocument(id)
+    pinnedDocumentIds.value = [...pinnedDocumentIds.value, id]
+  } catch (error) {
+    feedbackMessage.value =
+      error instanceof Error ? error.message : 'Unable to update this document pin right now.'
+  }
+}
+
+async function handleToggleFolderPin(id: string): Promise<void> {
+  feedbackMessage.value = ''
+
+  try {
+    if (pinnedFolderIds.value.includes(id)) {
+      await pinnedItemStorage.unpinFolder(id)
+      pinnedFolderIds.value = pinnedFolderIds.value.filter((entryId) => entryId !== id)
+      return
+    }
+
+    await pinnedItemStorage.pinFolder(id)
+    pinnedFolderIds.value = [...pinnedFolderIds.value, id]
+  } catch (error) {
+    feedbackMessage.value =
+      error instanceof Error ? error.message : 'Unable to update this folder pin right now.'
   }
 }
 
@@ -478,23 +548,27 @@ function formatCreatedAt(value: string): string {
 
         <section v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <FolderCard
-            v-for="folder in filteredFolders"
+            v-for="folder in sortedFolders"
             :key="folder.id"
             :folder="folder"
             :formatted-created-at="formatCreatedAt(folder.createdAt)"
+            :is-pinned="pinnedFolderIds.includes(folder.id)"
             @open="openFolder"
+            @toggle-pin="handleToggleFolderPin"
             @rename="openRenameFolder"
             @delete="promptDeleteFolder"
           />
 
           <DocumentCard
-            v-for="document in filteredDocuments"
+            v-for="document in sortedDocuments"
             :key="document.id"
             :document="document"
             :preview="getDocumentPreview(document.content)"
             :formatted-updated-at="formatUpdatedAt(document.updatedAt)"
+            :is-pinned="pinnedDocumentIds.includes(document.id)"
             @open="openDocument"
             @manage-folders="openManageFolders"
+            @toggle-pin="handleToggleDocumentPin"
             @duplicate="handleDuplicate"
             @delete="promptDeleteDocument"
           />
