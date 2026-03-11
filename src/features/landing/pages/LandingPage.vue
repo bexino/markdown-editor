@@ -258,7 +258,7 @@ async function navigateTo(path: string): Promise<void> {
       <div class="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <h2 class="mb-4 text-3xl font-bold md:text-4xl">Ready to Start Writing?</h2>
         <p class="mb-8 text-lg opacity-90">
-          Join thousands of writers using MarkDocs to create beautiful documents
+          Open the editor and begin creating Markdown documents.
         </p>
         <button
           type="button"
