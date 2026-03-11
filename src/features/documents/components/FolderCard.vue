@@ -1,49 +1,31 @@
 <script setup lang="ts">
 import ActionMenu from '@/features/documents/components/ActionMenu.vue'
-import type { DocumentRecord } from '@/features/documents/services/documentStorage'
+import type { FolderRecord } from '@/features/documents/services/folderStorage'
 
 defineProps<{
-  document: DocumentRecord
-  preview: string
-  formattedUpdatedAt: string
+  folder: FolderRecord
+  formattedCreatedAt: string
 }>()
 
 const emit = defineEmits<{
   open: [id: string]
-  manageFolders: [id: string]
-  duplicate: [id: string]
+  rename: [id: string]
   delete: [id: string]
 }>()
-
-function handleOpen(id: string): void {
-  emit('open', id)
-}
-
-function handleDelete(id: string): void {
-  emit('delete', id)
-}
-
-function handleDuplicate(id: string): void {
-  emit('duplicate', id)
-}
-
-function handleManageFolders(id: string): void {
-  emit('manageFolders', id)
-}
 </script>
 
 <template>
   <article
     class="group cursor-pointer rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-ring"
     tabindex="0"
-    @click="handleOpen(document.id)"
-    @keydown.enter.prevent="handleOpen(document.id)"
-    @keydown.space.prevent="handleOpen(document.id)"
+    @click="emit('open', folder.id)"
+    @keydown.enter.prevent="emit('open', folder.id)"
+    @keydown.space.prevent="emit('open', folder.id)"
   >
     <div class="mb-3 flex items-start justify-between gap-3">
       <div class="flex min-w-0 flex-1 items-center gap-2">
         <svg
-          class="size-5 shrink-0 text-primary"
+          class="size-5 shrink-0 text-amber-600"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -52,37 +34,26 @@ function handleManageFolders(id: string): void {
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <path d="M14 2v6h6" />
-          <path d="M16 13H8" />
-          <path d="M16 17H8" />
-          <path d="M10 9H8" />
+          <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
         </svg>
-        <h3 class="truncate font-semibold">{{ document.name }}</h3>
+        <h3 class="truncate font-semibold">{{ folder.name }}</h3>
       </div>
 
       <div class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         <ActionMenu
-          ariaLabel="Document actions"
+          ariaLabel="Folder actions"
           :items="[
-            { id: 'folders', label: 'Manage folders' },
-            { id: 'duplicate', label: 'Duplicate' },
+            { id: 'rename', label: 'Rename' },
             { id: 'delete', label: 'Delete', destructive: true },
           ]"
           @select="
-            $event === 'folders'
-              ? handleManageFolders(document.id)
-              : $event === 'duplicate'
-                ? handleDuplicate(document.id)
-                : handleDelete(document.id)
+            $event === 'rename'
+              ? emit('rename', folder.id)
+              : emit('delete', folder.id)
           "
         />
       </div>
     </div>
-
-    <p class="document-preview mb-3 text-sm text-muted-foreground">
-      {{ preview }}
-    </p>
 
     <div class="flex items-center gap-1 text-xs text-muted-foreground">
       <svg
@@ -100,16 +71,7 @@ function handleManageFolders(id: string): void {
         <rect x="3" y="4" width="18" height="18" rx="2" />
         <path d="M3 10h18" />
       </svg>
-      <span>Updated {{ formattedUpdatedAt }}</span>
+      <span>Created {{ formattedCreatedAt }}</span>
     </div>
   </article>
 </template>
-
-<style scoped>
-.document-preview {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-}
-</style>
