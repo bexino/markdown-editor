@@ -14,6 +14,9 @@ import { documentFolderStorage } from '@/features/documents/services/documentFol
 import { folderStorage, type FolderRecord } from '@/features/documents/services/folderStorage'
 import { pinnedItemStorage } from '@/features/documents/services/pinnedItemStorage'
 
+type WorkspaceFilter = 'all' | 'folders' | 'documents'
+type WorkspaceSort = 'updated' | 'nameAsc' | 'nameDesc' | 'created'
+
 const router = useRouter()
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -38,10 +41,26 @@ const manageFolderDocumentsId = ref<string | null>(null)
 const manageDocumentId = ref<string | null>(null)
 const pinnedDocumentIds = ref<string[]>([])
 const pinnedFolderIds = ref<string[]>([])
+const workspaceFilter = ref<WorkspaceFilter>('all')
+const workspaceSort = ref<WorkspaceSort>('updated')
 
-function sortByPinnedAndName<T extends { id: string; name: string }>(
+const filterOptions: Array<{ value: WorkspaceFilter; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'folders', label: 'Folders' },
+  { value: 'documents', label: 'Documents' },
+]
+
+const sortOptions: Array<{ value: WorkspaceSort; label: string }> = [
+  { value: 'updated', label: 'Recently Updated' },
+  { value: 'nameAsc', label: 'Name (A - Z)' },
+  { value: 'nameDesc', label: 'Name (Z - A)' },
+  { value: 'created', label: 'Recently Created' },
+]
+
+function sortWorkspaceEntries<T extends { id: string; name: string; createdAt: string; updatedAt: string }>(
   entries: T[],
   pinnedIds: string[],
+  sort: WorkspaceSort,
 ): T[] {
   const pinnedIdSet = new Set(pinnedIds)
 
@@ -51,6 +70,18 @@ function sortByPinnedAndName<T extends { id: string; name: string }>(
 
     if (leftPinned !== rightPinned) {
       return leftPinned ? -1 : 1
+    }
+
+    if (sort === 'updated') {
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+    }
+
+    if (sort === 'created') {
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+    }
+
+    if (sort === 'nameDesc') {
+      return right.name.localeCompare(left.name)
     }
 
     return left.name.localeCompare(right.name)
@@ -91,7 +122,7 @@ const filteredDocuments = computed(() => {
     return currentDocuments.value
   }
 
-  return documents.value.filter((document) => document.name.toLowerCase().includes(query))
+  return currentDocuments.value.filter((document) => document.name.toLowerCase().includes(query))
 })
 
 const filteredFolders = computed(() => {
@@ -101,14 +132,28 @@ const filteredFolders = computed(() => {
     return currentFolders.value
   }
 
-  return folders.value.filter((folder) => folder.name.toLowerCase().includes(query))
+  return currentFolders.value.filter((folder) => folder.name.toLowerCase().includes(query))
+})
+
+const visibleDocuments = computed(() => {
+  return workspaceFilter.value === 'folders' ? [] : filteredDocuments.value
+})
+
+const visibleFolders = computed(() => {
+  if (currentFolderId.value || workspaceFilter.value === 'documents') {
+    return []
+  }
+
+  return filteredFolders.value
 })
 
 const sortedDocuments = computed(() =>
-  sortByPinnedAndName(filteredDocuments.value, pinnedDocumentIds.value),
+  sortWorkspaceEntries(visibleDocuments.value, pinnedDocumentIds.value, workspaceSort.value),
 )
 
-const sortedFolders = computed(() => sortByPinnedAndName(filteredFolders.value, pinnedFolderIds.value))
+const sortedFolders = computed(() =>
+  sortWorkspaceEntries(visibleFolders.value, pinnedFolderIds.value, workspaceSort.value),
+)
 
 const selectedDocumentFolderIds = computed(() => {
   if (!manageDocumentId.value) {
@@ -477,6 +522,38 @@ function formatCreatedAt(value: string): string {
               class="flex h-10 w-full rounded-md border border-border bg-input-background px-3 py-2 pl-9 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
+
+          <label class="flex min-w-0 sm:w-40">
+            <select
+              v-model="workspaceFilter"
+              class="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Filter workspace items"
+            >
+              <option
+                v-for="option in filterOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+
+          <label class="flex min-w-0 sm:w-48">
+            <select
+              v-model="workspaceSort"
+              class="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sort workspace items"
+            >
+              <option
+                v-for="option in sortOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
 
           <button
             type="button"
