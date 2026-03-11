@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { basicSetup } from 'codemirror'
+import { markdown } from '@codemirror/lang-markdown'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { Compartment, EditorSelection, EditorState } from '@codemirror/state'
+import { tags } from '@lezer/highlight'
+import { EditorView, keymap, placeholder } from '@codemirror/view'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import MarkdownPreview from '@/features/documents/components/MarkdownPreview.vue'
 import SlashCommandMenu, {
   type SlashCommandItem,
 } from '@/features/documents/components/SlashCommandMenu.vue'
+import { theme } from '@/shared/services/theme'
 
 const props = defineProps<{
   content: string
@@ -14,7 +21,12 @@ const emit = defineEmits<{
   updateContent: [value: string]
 }>()
 
-const textarea = ref<HTMLTextAreaElement | null>(null)
+type EditorTarget = 'mobile' | 'desktop'
+
+const mobileEditorHost = ref<HTMLElement | null>(null)
+const desktopEditorHost = ref<HTMLElement | null>(null)
+const mobileEditorContainer = ref<HTMLElement | null>(null)
+const desktopEditorContainer = ref<HTMLElement | null>(null)
 const mobilePreview = ref<HTMLElement | null>(null)
 const desktopPreview = ref<HTMLElement | null>(null)
 const slashMenuRoot = ref<HTMLElement | null>(null)
@@ -30,8 +42,14 @@ const slashMenuPosition = ref({
   left: 24,
 })
 
+const mobileThemeCompartment = new Compartment()
+const desktopThemeCompartment = new Compartment()
+
 let editorBadgeTimeout: number | undefined
 let previewBadgeTimeout: number | undefined
+let mobileEditorView: EditorView | null = null
+let desktopEditorView: EditorView | null = null
+let isSyncingEditors = false
 
 interface SlashCommandDefinition extends SlashCommandItem {
   aliases: string[]
@@ -152,11 +170,41 @@ function setTextareaRef(
         $el?: Element
       }
     | null,
+  target: EditorTarget,
 ): void {
   const resolvedElement =
     element instanceof Element ? element : element && '$el' in element ? element.$el : null
 
-  textarea.value = resolvedElement instanceof HTMLTextAreaElement ? resolvedElement : null
+  const host = resolvedElement instanceof HTMLElement ? resolvedElement : null
+
+  if (target === 'mobile') {
+    mobileEditorHost.value = host
+    return
+  }
+
+  desktopEditorHost.value = host
+}
+
+function setEditorContainerRef(
+  element:
+    | Element
+    | {
+        $el?: Element
+      }
+    | null,
+  target: EditorTarget,
+): void {
+  const resolvedElement =
+    element instanceof Element ? element : element && '$el' in element ? element.$el : null
+
+  const container = resolvedElement instanceof HTMLElement ? resolvedElement : null
+
+  if (target === 'mobile') {
+    mobileEditorContainer.value = container
+    return
+  }
+
+  desktopEditorContainer.value = container
 }
 
 function setPreviewRef(
@@ -225,6 +273,113 @@ function updateContent(value: string): void {
   emit('updateContent', value)
 }
 
+function getThemeExtension() {
+  const highlightStyle = HighlightStyle.define([
+    {
+      tag: [tags.heading, tags.keyword],
+      color: theme.value === 'dark' ? '#f7f7f8' : 'var(--color-foreground)',
+      fontWeight: '700',
+    },
+    {
+      tag: [tags.processingInstruction, tags.meta, tags.comment],
+      color: theme.value === 'dark' ? '#9ca3af' : 'var(--color-muted-foreground)',
+    },
+    {
+      tag: [tags.link, tags.url],
+      color: theme.value === 'dark' ? '#c4b5fd' : 'var(--color-primary)',
+    },
+    {
+      tag: [tags.string, tags.special(tags.string)],
+      color: theme.value === 'dark' ? '#c7d2fe' : '#4338ca',
+    },
+    {
+      tag: [tags.emphasis, tags.strong],
+      color: theme.value === 'dark' ? '#e5e7eb' : 'var(--color-foreground)',
+      fontWeight: '600',
+    },
+    {
+      tag: [tags.monospace, tags.literal, tags.atom],
+      color: theme.value === 'dark' ? '#93c5fd' : '#1d4ed8',
+    },
+    {
+      tag: [tags.list, tags.quote],
+      color: theme.value === 'dark' ? '#d1d5db' : 'var(--color-foreground)',
+    },
+  ])
+
+  return [
+    EditorView.theme(
+      {
+        '&': {
+          height: '100%',
+          backgroundColor: 'var(--color-editor-surface)',
+          color: 'var(--color-foreground)',
+        },
+        '.cm-scroller': {
+          overflow: 'auto',
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace',
+          lineHeight: '1.75',
+        },
+        '.cm-content': {
+          minHeight: '100%',
+          padding: '1rem',
+          fontSize: '0.875rem',
+        },
+        '.cm-focused': {
+          outline: 'none',
+        },
+        '.cm-cursor, .cm-dropCursor': {
+          borderLeftColor: 'var(--color-foreground)',
+        },
+        '.cm-selectionBackground, ::selection': {
+          backgroundColor:
+            theme.value === 'dark'
+              ? 'color-mix(in srgb, var(--color-accent) 70%, transparent)'
+              : 'color-mix(in srgb, var(--color-primary) 18%, transparent)',
+        },
+        '.cm-activeLine': {
+          backgroundColor:
+            theme.value === 'dark'
+              ? 'color-mix(in srgb, var(--color-muted) 40%, transparent)'
+              : 'transparent',
+        },
+        '.cm-activeLineGutter': {
+          backgroundColor: 'transparent',
+        },
+        '.cm-gutters': {
+          display: 'none',
+        },
+        '.cm-placeholder': {
+          color: 'var(--color-muted-foreground)',
+        },
+      },
+      { dark: theme.value === 'dark' },
+    ),
+    syntaxHighlighting(highlightStyle, { fallback: true }),
+  ]
+}
+
+function getEditorView(target: EditorTarget): EditorView | null {
+  return target === 'mobile' ? mobileEditorView : desktopEditorView
+}
+
+function getActiveEditorTarget(): EditorTarget {
+  if (mobileEditorView?.hasFocus) {
+    return 'mobile'
+  }
+
+  if (desktopEditorView?.hasFocus) {
+    return 'desktop'
+  }
+
+  return window.innerWidth < 768 ? 'mobile' : 'desktop'
+}
+
+function getActiveEditorView(): EditorView | null {
+  return getEditorView(getActiveEditorTarget())
+}
+
 function closeSlashMenu(): void {
   slashQuery.value = ''
   slashStart.value = null
@@ -258,86 +413,28 @@ function updateSlashMenu(value: string, cursorPosition: number): void {
 }
 
 function updateSlashMenuPosition(cursorPosition: number): void {
-  const element = textarea.value
+  const target = getActiveEditorTarget()
+  const view = getEditorView(target)
+  const container = target === 'mobile' ? mobileEditorContainer.value : desktopEditorContainer.value
 
-  if (!element) {
+  if (!view || !container) {
     return
   }
 
-  const mirror = document.createElement('div')
-  const styles = window.getComputedStyle(element)
-  const properties = [
-    'boxSizing',
-    'width',
-    'height',
-    'overflowX',
-    'overflowY',
-    'borderTopWidth',
-    'borderRightWidth',
-    'borderBottomWidth',
-    'borderLeftWidth',
-    'paddingTop',
-    'paddingRight',
-    'paddingBottom',
-    'paddingLeft',
-    'fontStyle',
-    'fontVariant',
-    'fontWeight',
-    'fontStretch',
-    'fontSize',
-    'fontSizeAdjust',
-    'lineHeight',
-    'fontFamily',
-    'textAlign',
-    'textTransform',
-    'textIndent',
-    'textDecoration',
-    'letterSpacing',
-    'wordSpacing',
-    'tabSize',
-    'MozTabSize',
-    'whiteSpace',
-  ] as const
+  const coords = view.coordsAtPos(cursorPosition)
 
-  mirror.style.position = 'absolute'
-  mirror.style.visibility = 'hidden'
-  mirror.style.pointerEvents = 'none'
-  mirror.style.top = '0'
-  mirror.style.left = '0'
-  mirror.style.whiteSpace = 'pre-wrap'
-  mirror.style.wordWrap = 'break-word'
-
-  for (const property of properties) {
-    ;(mirror.style as CSSStyleDeclaration & Record<string, string>)[property] = (
-      styles as CSSStyleDeclaration & Record<string, string>
-    )[property] ?? ''
+  if (!coords) {
+    return
   }
 
-  mirror.textContent = element.value.slice(0, cursorPosition)
-
-  const marker = document.createElement('span')
-  marker.textContent = '\u200b'
-  mirror.appendChild(marker)
-  document.body.appendChild(mirror)
-
-  const lineHeight = Number.parseFloat(styles.lineHeight) || 20
-  const top =
-    marker.offsetTop - element.scrollTop + lineHeight + 10
-  const left =
-    Math.min(marker.offsetLeft - element.scrollLeft, element.clientWidth - 304)
+  const containerRect = container.getBoundingClientRect()
+  const top = coords.bottom - containerRect.top + 10
+  const left = Math.min(coords.left - containerRect.left, containerRect.width - 304)
 
   slashMenuPosition.value = {
     top: Math.max(16, top),
     left: Math.max(16, left),
   }
-
-  mirror.remove()
-}
-
-function handleEditorInput(event: Event): void {
-  const element = event.target as HTMLTextAreaElement
-  updateContent(element.value)
-  updateSlashMenu(element.value, element.selectionStart)
 }
 
 function startResize(event: MouseEvent): void {
@@ -371,55 +468,61 @@ function startResize(event: MouseEvent): void {
 }
 
 function focusEditor(): void {
-  textarea.value?.focus()
+  getActiveEditorView()?.focus()
 }
 
 function insertMarkdown(before: string, after = ''): void {
-  const element = textarea.value
+  const view = getActiveEditorView()
 
-  if (!element) {
+  if (!view) {
     return
   }
 
-  const start = element.selectionStart
-  const end = element.selectionEnd
-  const selected = props.content.slice(start, end)
-  const nextValue =
-    props.content.slice(0, start) + before + selected + after + props.content.slice(end)
+  const selection = view.state.selection.main
+  const selected = view.state.sliceDoc(selection.from, selection.to)
 
-  emit('updateContent', nextValue)
-
-  window.requestAnimationFrame(() => {
-    focusEditor()
-    const selectionStart = start + before.length
-    const selectionEnd = selected ? end + before.length : selectionStart
-    element.setSelectionRange(selectionStart, selectionEnd)
+  view.dispatch({
+    changes: {
+      from: selection.from,
+      to: selection.to,
+      insert: `${before}${selected}${after}`,
+    },
+    selection: EditorSelection.range(
+      selection.from + before.length,
+      selected ? selection.to + before.length : selection.from + before.length,
+    ),
+    scrollIntoView: true,
   })
+
+  view.focus()
 }
 
 function insertAtCursor(text: string): void {
-  const element = textarea.value
+  const view = getActiveEditorView()
 
-  if (!element) {
+  if (!view) {
     return
   }
 
-  const start = element.selectionStart
-  const nextValue = props.content.slice(0, start) + text + props.content.slice(start)
+  const selection = view.state.selection.main
 
-  emit('updateContent', nextValue)
-
-  window.requestAnimationFrame(() => {
-    focusEditor()
-    const position = start + text.length
-    element.setSelectionRange(position, position)
+  view.dispatch({
+    changes: {
+      from: selection.from,
+      to: selection.to,
+      insert: text,
+    },
+    selection: EditorSelection.cursor(selection.from + text.length),
+    scrollIntoView: true,
   })
+
+  view.focus()
 }
 
 function applySlashCommand(commandId: string): void {
-  const element = textarea.value
+  const view = getActiveEditorView()
 
-  if (!element || slashStart.value === null) {
+  if (!view || slashStart.value === null) {
     return
   }
 
@@ -430,20 +533,22 @@ function applySlashCommand(commandId: string): void {
   }
 
   const insertionStart = slashStart.value
-  const cursorPosition = element.selectionStart
-  const lineEnd = props.content.indexOf('\n', cursorPosition)
-  const replaceEnd = lineEnd === -1 ? props.content.length : lineEnd
-  const nextValue =
-    props.content.slice(0, insertionStart) + command.insert + props.content.slice(replaceEnd)
+  const cursorPosition = view.state.selection.main.head
+  const line = view.state.doc.lineAt(cursorPosition)
+  const replaceEnd = line.to
 
-  emit('updateContent', nextValue)
-  closeSlashMenu()
-
-  window.requestAnimationFrame(() => {
-    focusEditor()
-    const nextCursor = insertionStart + (command.cursorOffset ?? command.insert.length)
-    element.setSelectionRange(nextCursor, nextCursor)
+  view.dispatch({
+    changes: {
+      from: insertionStart,
+      to: replaceEnd,
+      insert: command.insert,
+    },
+    selection: EditorSelection.cursor(insertionStart + (command.cursorOffset ?? command.insert.length)),
+    scrollIntoView: true,
   })
+
+  closeSlashMenu()
+  view.focus()
 }
 
 function handleEditorKeydown(event: KeyboardEvent): void {
@@ -482,6 +587,143 @@ function handleEditorKeydown(event: KeyboardEvent): void {
   }
 }
 
+function handleEditorUpdate(update: ViewUpdateLike): void {
+  if (!isSyncingEditors && update.docChanged) {
+    updateContent(update.state.doc.toString())
+  }
+
+  if (update.focusChanged && update.view.hasFocus) {
+    updateSlashMenu(update.state.doc.toString(), update.state.selection.main.head)
+  }
+
+  if (update.selectionSet || update.docChanged) {
+    updateSlashMenu(update.state.doc.toString(), update.state.selection.main.head)
+  }
+}
+
+function handleEditorScroll(target: EditorTarget): void {
+  if (getActiveEditorTarget() !== target) {
+    return
+  }
+
+  revealBadge('editor')
+}
+
+interface ViewUpdateLike {
+  view: EditorView
+  state: EditorState
+  docChanged: boolean
+  selectionSet: boolean
+  focusChanged: boolean
+}
+
+function createEditorExtensions(target: EditorTarget, themeCompartment: Compartment) {
+  return [
+    basicSetup,
+    markdown(),
+    placeholder('Start writing your markdown here...'),
+    EditorView.lineWrapping,
+    keymap.of([]),
+    themeCompartment.of(getThemeExtension()),
+    EditorView.updateListener.of((update) => {
+      handleEditorUpdate({
+        view: update.view,
+        state: update.state,
+        docChanged: update.docChanged,
+        selectionSet: update.selectionSet,
+        focusChanged: update.focusChanged,
+      })
+    }),
+    EditorView.domEventHandlers({
+      keydown: (event) => {
+        handleEditorKeydown(event)
+        return false
+      },
+      focus: () => {
+        const view = getEditorView(target)
+
+        if (view) {
+          updateSlashMenu(view.state.doc.toString(), view.state.selection.main.head)
+        }
+
+        return false
+      },
+      scroll: () => {
+        handleEditorScroll(target)
+        return false
+      },
+    }),
+    EditorView.theme({
+      '&': {
+        height: '100%',
+        backgroundColor: 'transparent',
+      },
+      '.cm-editor': {
+        height: '100%',
+      },
+      '.cm-scroller': {
+        height: '100%',
+      },
+    }),
+  ]
+}
+
+function createEditor(target: EditorTarget): void {
+  const host = target === 'mobile' ? mobileEditorHost.value : desktopEditorHost.value
+  const themeCompartment = target === 'mobile' ? mobileThemeCompartment : desktopThemeCompartment
+
+  if (!host || getEditorView(target)) {
+    return
+  }
+
+  const view = new EditorView({
+    state: EditorState.create({
+      doc: props.content,
+      extensions: createEditorExtensions(target, themeCompartment),
+    }),
+    parent: host,
+  })
+
+  if (target === 'mobile') {
+    mobileEditorView = view
+    return
+  }
+
+  desktopEditorView = view
+}
+
+function syncEditorContent(nextContent: string): void {
+  const views = [mobileEditorView, desktopEditorView]
+
+  isSyncingEditors = true
+
+  for (const view of views) {
+    if (!view) {
+      continue
+    }
+
+    const currentContent = view.state.doc.toString()
+
+    if (currentContent === nextContent) {
+      continue
+    }
+
+    const selection = view.state.selection.main
+    const nextCursor = Math.min(selection.head, nextContent.length)
+
+    view.dispatch({
+      changes: {
+        from: 0,
+        to: currentContent.length,
+        insert: nextContent,
+      },
+      selection: EditorSelection.cursor(nextCursor),
+    })
+  }
+
+  isSyncingEditors = false
+}
+
 function scrollToHeading(id: string): void {
   const previewRoot =
     window.innerWidth >= 768 ? desktopPreview.value ?? mobilePreview.value : mobilePreview.value
@@ -510,11 +752,34 @@ defineExpose({
 })
 
 onMounted(() => {
+  createEditor('mobile')
+  createEditor('desktop')
   document.addEventListener('mousedown', handleDocumentPointerDown)
+})
+
+watch(
+  () => props.content,
+  (nextContent) => {
+    syncEditorContent(nextContent)
+  },
+)
+
+watch(theme, () => {
+  mobileEditorView?.dispatch({
+    effects: mobileThemeCompartment.reconfigure(getThemeExtension()),
+  })
+  desktopEditorView?.dispatch({
+    effects: desktopThemeCompartment.reconfigure(getThemeExtension()),
+  })
 })
 
 onBeforeUnmount(() => {
   isResizing.value = false
+
+  mobileEditorView?.destroy()
+  desktopEditorView?.destroy()
+  mobileEditorView = null
+  desktopEditorView = null
 
   document.removeEventListener('mousedown', handleDocumentPointerDown)
 
@@ -531,22 +796,21 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex-1 overflow-hidden">
     <div class="flex h-full flex-col md:hidden">
-      <section class="relative flex min-h-0 flex-1 flex-col border-b border-border">
+      <section
+        :ref="(element) => setEditorContainerRef(element, 'mobile')"
+        class="relative flex min-h-0 flex-1 flex-col border-b border-border"
+      >
         <div
           class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm transition-opacity duration-200"
           :class="showEditorBadge ? 'opacity-100' : 'opacity-0'"
         >
           Markdown
         </div>
-        <textarea
-          :ref="setTextareaRef"
-          :value="content"
-          class="min-h-[320px] flex-1 resize-none bg-background px-4 py-4 font-mono text-sm outline-none placeholder:text-muted-foreground"
-          placeholder="Start writing your markdown here..."
-          @input="handleEditorInput"
-          @keydown="handleEditorKeydown"
-          @scroll="revealBadge('editor')"
-        />
+        <div
+          :ref="(element) => setTextareaRef(element, 'mobile')"
+          class="min-h-[320px] flex-1"
+          style="--color-editor-surface: color-mix(in srgb, var(--color-muted) 10%, transparent)"
+        ></div>
         <div v-if="showSlashMenu" :ref="setSlashMenuRef">
           <SlashCommandMenu
             :commands="filteredSlashCommands"
@@ -578,22 +842,21 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="hidden h-full md:grid" :style="{ gridTemplateColumns }">
-      <section class="relative flex min-w-0 flex-col overflow-hidden">
+      <section
+        :ref="(element) => setEditorContainerRef(element, 'desktop')"
+        class="relative flex min-w-0 flex-col overflow-hidden"
+      >
         <div
           class="pointer-events-none absolute top-4 right-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm transition-opacity duration-200"
           :class="showEditorBadge ? 'opacity-100' : 'opacity-0'"
         >
           Markdown
         </div>
-        <textarea
-          :ref="setTextareaRef"
-          :value="content"
-          class="h-full min-h-0 w-full flex-1 resize-none bg-background px-4 py-4 font-mono text-sm outline-none placeholder:text-muted-foreground"
-          placeholder="Start writing your markdown here..."
-          @input="handleEditorInput"
-          @keydown="handleEditorKeydown"
-          @scroll="revealBadge('editor')"
-        />
+        <div
+          :ref="(element) => setTextareaRef(element, 'desktop')"
+          class="h-full min-h-0 w-full flex-1"
+          style="--color-editor-surface: color-mix(in srgb, var(--color-muted) 10%, transparent)"
+        ></div>
         <div v-if="showSlashMenu" :ref="setSlashMenuRef">
           <SlashCommandMenu
             :commands="filteredSlashCommands"
@@ -636,3 +899,15 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(.cm-editor) {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+}
+
+:deep(.cm-focused) {
+  outline: none;
+}
+</style>
