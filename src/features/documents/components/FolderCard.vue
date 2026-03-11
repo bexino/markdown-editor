@@ -11,6 +11,7 @@ defineProps<{
 const emit = defineEmits<{
   open: [id: string]
   togglePin: [id: string]
+  manageDocuments: [id: string]
   rename: [id: string]
   delete: [id: string]
 }>()
@@ -60,12 +61,15 @@ const emit = defineEmits<{
           ariaLabel="Folder actions"
           :items="[
             { id: 'pin', label: isPinned ? 'Unpin' : 'Pin' },
+            { id: 'manage-documents', label: 'Manage documents' },
             { id: 'rename', label: 'Rename' },
             { id: 'delete', label: 'Delete', destructive: true },
           ]"
           @select="
             $event === 'pin'
               ? emit('togglePin', folder.id)
+              : $event === 'manage-documents'
+              ? emit('manageDocuments', folder.id)
               : $event === 'rename'
               ? emit('rename', folder.id)
               : emit('delete', folder.id)

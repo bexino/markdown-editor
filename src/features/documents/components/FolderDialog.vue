@@ -5,12 +5,13 @@ import type { DocumentRecord } from '@/features/documents/services/documentStora
 
 const props = defineProps<{
   isOpen: boolean
-  mode: 'create' | 'rename'
+  mode: 'create' | 'rename' | 'manageDocuments'
   title: string
   description: string
   confirmLabel: string
   initialName?: string
   documents?: DocumentRecord[]
+  excludedDocumentIds?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -31,7 +32,11 @@ const createDocument = ref(false)
 const documentName = ref('Untitled Document')
 
 const sortedDocuments = computed(() => {
-  return [...(props.documents ?? [])].sort((left, right) => left.name.localeCompare(right.name))
+  const excludedDocumentIdSet = new Set(props.excludedDocumentIds ?? [])
+
+  return [...(props.documents ?? [])]
+    .filter((document) => !excludedDocumentIdSet.has(document.id))
+    .sort((left, right) => left.name.localeCompare(right.name))
 })
 
 watch(
@@ -57,7 +62,7 @@ function toggleDocument(documentId: string): void {
 function handleSubmit(): void {
   const trimmedName = name.value.trim()
 
-  if (!trimmedName) {
+  if (props.mode !== 'manageDocuments' && !trimmedName) {
     return
   }
 
@@ -83,7 +88,7 @@ function handleSubmit(): void {
       </header>
 
       <div class="mt-6 space-y-4">
-        <label class="block">
+        <label v-if="mode !== 'manageDocuments'" class="block">
           <span class="mb-2 block text-sm font-medium">Folder Name</span>
           <input
             v-model="name"
@@ -94,7 +99,7 @@ function handleSubmit(): void {
           />
         </label>
 
-        <template v-if="mode === 'create'">
+        <template v-if="mode === 'create' || mode === 'manageDocuments'">
           <div>
             <div class="mb-2 flex items-center justify-between gap-3">
               <span class="text-sm font-medium">Add Existing Documents</span>
@@ -122,7 +127,11 @@ function handleSubmit(): void {
                 v-if="sortedDocuments.length === 0"
                 class="px-3 py-6 text-center text-sm text-muted-foreground"
               >
-                No documents available yet.
+                {{
+                  (excludedDocumentIds?.length ?? 0) > 0
+                    ? 'All available documents are already in this folder.'
+                    : 'No documents available yet.'
+                }}
               </p>
             </div>
           </div>
@@ -160,7 +169,9 @@ function handleSubmit(): void {
         <button
           type="button"
           class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="!name.trim() || (createDocument && !documentName.trim())"
+          :disabled="
+            (mode !== 'manageDocuments' && !name.trim()) || (createDocument && !documentName.trim())
+          "
           @click="handleSubmit"
         >
           {{ confirmLabel }}

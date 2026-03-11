@@ -34,6 +34,7 @@ const feedbackMessage = ref('')
 const isCreateFolderDialogOpen = ref(false)
 const renameFolderId = ref<string | null>(null)
 const renameFolderName = ref('')
+const manageFolderDocumentsId = ref<string | null>(null)
 const manageDocumentId = ref<string | null>(null)
 const pinnedDocumentIds = ref<string[]>([])
 const pinnedFolderIds = ref<string[]>([])
@@ -115,6 +116,35 @@ const selectedDocumentFolderIds = computed(() => {
   }
 
   return documentFolderIds.value[manageDocumentId.value] ?? []
+})
+
+const managedFolder = computed(() => {
+  if (!manageFolderDocumentsId.value) {
+    return null
+  }
+
+  return folders.value.find((entry) => entry.id === manageFolderDocumentsId.value) ?? null
+})
+
+const documentIdsByFolderId = computed(() => {
+  return Object.entries(documentFolderIds.value).reduce<Record<string, string[]>>(
+    (accumulator, [documentId, folderIds]) => {
+      for (const folderId of folderIds) {
+        accumulator[folderId] = [...(accumulator[folderId] ?? []), documentId]
+      }
+
+      return accumulator
+    },
+    {},
+  )
+})
+
+const managedFolderDocumentIds = computed(() => {
+  if (!manageFolderDocumentsId.value) {
+    return []
+  }
+
+  return documentIdsByFolderId.value[manageFolderDocumentsId.value] ?? []
 })
 
 onMounted(() => {
@@ -295,9 +325,17 @@ function openManageFolders(id: string): void {
   manageDocumentId.value = id
 }
 
+function openManageFolderDocuments(id: string): void {
+  manageFolderDocumentsId.value = id
+}
+
 function closeRenameFolderDialog(): void {
   renameFolderId.value = null
   renameFolderName.value = ''
+}
+
+function closeManageFolderDocumentsDialog(): void {
+  manageFolderDocumentsId.value = null
 }
 
 function closeManageFolders(): void {
@@ -318,6 +356,37 @@ async function handleUpdateDocumentFolders(folderIds: string[]): Promise<void> {
   } catch (error) {
     feedbackMessage.value =
       error instanceof Error ? error.message : 'Unable to update document folders right now.'
+  }
+}
+
+async function handleManageFolderDocuments(payload: {
+  name: string
+  documentIds: string[]
+  createDocument: boolean
+  documentName: string
+}): Promise<void> {
+  if (!manageFolderDocumentsId.value) {
+    return
+  }
+
+  feedbackMessage.value = ''
+
+  try {
+    await documentFolderStorage.addDocumentsToFolder(
+      manageFolderDocumentsId.value,
+      payload.documentIds,
+    )
+
+    if (payload.createDocument) {
+      const documentRecord = await documentStorage.create(payload.documentName, defaultContent)
+      await documentFolderStorage.setFoldersForDocument(documentRecord.id, [manageFolderDocumentsId.value])
+    }
+
+    closeManageFolderDocumentsDialog()
+    await loadWorkspace()
+  } catch (error) {
+    feedbackMessage.value =
+      error instanceof Error ? error.message : 'Unable to add documents to this folder right now.'
   }
 }
 
@@ -412,7 +481,7 @@ function formatCreatedAt(value: string): string {
           <button
             type="button"
             class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            @click="isCreateFolderDialogOpen = true"
+            @click="currentFolderId ? openManageFolderDocuments(currentFolderId) : (isCreateFolderDialogOpen = true)"
           >
             <svg
               class="size-4"
@@ -428,7 +497,9 @@ function formatCreatedAt(value: string): string {
               <path d="M12 11v6" />
               <path d="M9 14h6" />
             </svg>
-            <span class="hidden sm:inline">New Folder</span>
+            <span class="hidden sm:inline">
+              {{ currentFolderId ? 'Add Documents' : 'New Folder' }}
+            </span>
           </button>
 
           <button
@@ -505,7 +576,11 @@ function formatCreatedAt(value: string): string {
             <button
               type="button"
               class="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              @click="isCreateFolderDialogOpen = true"
+              @click="
+                currentFolderId
+                  ? openManageFolderDocuments(currentFolderId)
+                  : (isCreateFolderDialogOpen = true)
+              "
             >
               <svg
                 class="size-4"
@@ -521,7 +596,7 @@ function formatCreatedAt(value: string): string {
                 <path d="M12 11v6" />
                 <path d="M9 14h6" />
               </svg>
-              Create Folder
+              {{ currentFolderId ? 'Add Documents' : 'Create Folder' }}
             </button>
             <button
               type="button"
@@ -555,6 +630,7 @@ function formatCreatedAt(value: string): string {
             :is-pinned="pinnedFolderIds.includes(folder.id)"
             @open="openFolder"
             @toggle-pin="handleToggleFolderPin"
+            @manage-documents="openManageFolderDocuments"
             @rename="openRenameFolder"
             @delete="promptDeleteFolder"
           />
@@ -596,6 +672,18 @@ function formatCreatedAt(value: string): string {
       :initial-name="renameFolderName"
       @close="closeRenameFolderDialog"
       @submit="handleRenameFolder"
+    />
+
+    <FolderDialog
+      :is-open="!!manageFolderDocumentsId"
+      mode="manageDocuments"
+      :title="managedFolder ? `Add Documents to ${managedFolder.name}` : 'Add Documents'"
+      description="Add existing documents to this folder or create a new one."
+      confirm-label="Add Documents"
+      :documents="documents"
+      :excluded-document-ids="managedFolderDocumentIds"
+      @close="closeManageFolderDocumentsDialog"
+      @submit="handleManageFolderDocuments"
     />
 
     <DocumentFoldersDialog
