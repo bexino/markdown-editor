@@ -62,11 +62,10 @@ async function navigateTo(path: string): Promise<void> {
         <h1
           class="mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl md:text-6xl"
         >
-          Write Markdown with Confidence
+          Write and preview Markdown in real time
         </h1>
         <p class="mb-8 text-lg text-muted-foreground md:text-xl">
-          The most powerful and intuitive markdown editor. Create, edit, and preview your documents
-          with live rendering and beautiful syntax highlighting.
+          A Markdown editor for creating, editing, and previewing documents with live rendering and syntax highlighting.
         </p>
         <div class="flex flex-wrap justify-center gap-4">
           <button
