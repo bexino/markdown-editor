@@ -36,18 +36,14 @@ export const featureCards = [
 export const benefits = [
   {
     title: 'Clean, Distraction-Free Interface',
-    description: 'Focus on your writing with our minimalist, intuitive design',
-  },
-  {
-    title: 'GitHub Flavored Markdown',
-    description: 'Full support for tables, task lists, and all GFM features',
+    description: 'Focus on your writing with a minimalist, intuitive design',
   },
   {
     title: 'Export Your Work',
-    description: 'Copy rendered HTML or save as markdown files',
+    description: 'Save as markdown or PDF files',
   },
   {
-    title: 'Free Forever',
-    description: 'No subscriptions, no hidden fees. Just powerful markdown editing',
+    title: 'Completely Free.',
+    description: 'No subscriptions, no hidden fees.',
   },
 ] as const
