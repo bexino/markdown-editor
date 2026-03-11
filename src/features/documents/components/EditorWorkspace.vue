@@ -809,7 +809,10 @@ onBeforeUnmount(() => {
         <div
           :ref="(element) => setTextareaRef(element, 'mobile')"
           class="min-h-[320px] flex-1"
-          style="--color-editor-surface: color-mix(in srgb, var(--color-muted) 10%, transparent)"
+          :style="{
+            '--color-editor-surface':
+              theme === 'dark' ? '#0e0e0e' : 'color-mix(in srgb, var(--color-muted) 10%, transparent)',
+          }"
         ></div>
         <div v-if="showSlashMenu" :ref="setSlashMenuRef">
           <SlashCommandMenu
@@ -855,7 +858,10 @@ onBeforeUnmount(() => {
         <div
           :ref="(element) => setTextareaRef(element, 'desktop')"
           class="h-full min-h-0 w-full flex-1"
-          style="--color-editor-surface: color-mix(in srgb, var(--color-muted) 10%, transparent)"
+          :style="{
+            '--color-editor-surface':
+              theme === 'dark' ? '#0e0e0e' : 'color-mix(in srgb, var(--color-muted) 10%, transparent)',
+          }"
         ></div>
         <div v-if="showSlashMenu" :ref="setSlashMenuRef">
           <SlashCommandMenu
