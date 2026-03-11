@@ -9,6 +9,10 @@ import EditorToolbar from '@/features/documents/components/EditorToolbar.vue'
 import EditorWorkspace from '@/features/documents/components/EditorWorkspace.vue'
 import { extractMarkdownHeadings, parseMarkdown } from '@/features/documents/lib/markdown'
 import { documentStorage } from '@/features/documents/services/documentStorage'
+import {
+  recentDocumentStorage,
+  type RecentDocumentRecord,
+} from '@/features/documents/services/recentDocumentStorage'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,9 +27,11 @@ const savedContent = ref('')
 const errorMessage = ref('')
 const statusMessage = ref('')
 const statusTone = ref<'success' | 'error'>('success')
-const showBackConfirmation = ref(false)
-const allowBackNavigation = ref(false)
+const showNavigationConfirmation = ref(false)
+const allowNavigation = ref(false)
 const isSidebarOpen = ref(true)
+const recentDocuments = ref<RecentDocumentRecord[]>([])
+const pendingNavigationPath = ref<string | null>(null)
 
 let statusTimeout: number | undefined
 let autosaveTimeout: number | undefined
@@ -61,7 +67,7 @@ const documentHeadings = computed(() => {
 })
 
 onMounted(() => {
-  void loadDocument()
+  recentDocuments.value = recentDocumentStorage.getAll()
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
@@ -80,18 +86,23 @@ onBeforeUnmount(() => {
 })
 
 onBeforeRouteLeave((to) => {
-  if (!hasUnsavedChanges.value || allowBackNavigation.value) {
-    allowBackNavigation.value = false
+  if (!hasUnsavedChanges.value || allowNavigation.value) {
+    allowNavigation.value = false
     return true
   }
 
-  if (to.path === '/documents') {
-    showBackConfirmation.value = true
-    return false
-  }
-
-  return true
+  pendingNavigationPath.value = to.fullPath
+  showNavigationConfirmation.value = true
+  return false
 })
+
+watch(
+  documentId,
+  () => {
+    void loadDocument()
+  },
+  { immediate: true },
+)
 
 async function loadDocument(): Promise<void> {
   if (!documentId.value) {
@@ -117,6 +128,10 @@ async function loadDocument(): Promise<void> {
     content.value = documentRecord.content
     savedName.value = documentRecord.name
     savedContent.value = documentRecord.content
+    recentDocuments.value = recentDocumentStorage.add({
+      id: documentRecord.id,
+      name: documentRecord.name,
+    })
   } catch (error) {
     errorMessage.value =
       error instanceof Error ? error.message : 'Unable to load this document right now.'
@@ -142,6 +157,10 @@ async function handleSave(isAutosave = false): Promise<void> {
     name.value = updatedDocument.name
     savedName.value = updatedDocument.name
     savedContent.value = updatedDocument.content
+    recentDocuments.value = recentDocumentStorage.add({
+      id: updatedDocument.id,
+      name: updatedDocument.name,
+    })
     showStatus(isAutosave ? 'Automatically saved' : 'Document saved', 'success')
   } catch (error) {
     const message =
@@ -189,26 +208,38 @@ function showStatus(message: string, tone: 'success' | 'error'): void {
 }
 
 function handleBack(): void {
-  if (hasUnsavedChanges.value) {
-    showBackConfirmation.value = true
+  void router.push('/documents')
+}
+
+function closeNavigationConfirmation(): void {
+  showNavigationConfirmation.value = false
+  pendingNavigationPath.value = null
+}
+
+function confirmNavigation(): void {
+  const path = pendingNavigationPath.value
+
+  if (!path) {
+    closeNavigationConfirmation()
     return
   }
 
-  void router.push('/documents')
-}
-
-function closeBackConfirmation(): void {
-  showBackConfirmation.value = false
-}
-
-function confirmBackNavigation(): void {
-  allowBackNavigation.value = true
-  showBackConfirmation.value = false
-  void router.push('/documents')
+  allowNavigation.value = true
+  showNavigationConfirmation.value = false
+  pendingNavigationPath.value = null
+  void router.push(path)
 }
 
 function openPreview(): void {
   void router.push(`/preview/${documentId.value}`)
+}
+
+function openRecentDocument(id: string): void {
+  if (!id || id === documentId.value) {
+    return
+  }
+
+  void router.push(`/editor/${id}`)
 }
 
 function toggleSidebar(): void {
@@ -503,9 +534,12 @@ watch([name, content], () => {
       :is-saving="isSaving"
       :save-state-label="saveStateLabel"
       :save-state-tone="saveStateTone"
+      :current-document-id="documentId"
+      :recent-documents="recentDocuments"
       @back="handleBack"
       @export-markdown="handleExportMarkdown"
       @export-pdf="handleExportPdf"
+      @open-recent-document="openRecentDocument"
       @update-title="name = $event"
       @preview="openPreview"
       @save="handleSave"
@@ -554,30 +588,30 @@ watch([name, content], () => {
     </div>
 
     <div
-      v-if="showBackConfirmation"
+      v-if="showNavigationConfirmation"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      @click.self="closeBackConfirmation"
+      @click.self="closeNavigationConfirmation"
     >
       <section class="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
         <h2 class="text-xl font-semibold">Unsaved changes</h2>
         <p class="mt-2 text-sm text-muted-foreground">
-          You have unsaved changes. Are you sure you want to go back?
+          You have unsaved changes. Are you sure you want to leave this document?
         </p>
 
         <div class="mt-6 flex justify-end gap-3">
           <button
             type="button"
             class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
-            @click="closeBackConfirmation"
+            @click="closeNavigationConfirmation"
           >
             Stay here
           </button>
           <button
             type="button"
             class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            @click="confirmBackNavigation"
+            @click="confirmNavigation"
           >
-            Go back
+            Leave editor
           </button>
         </div>
       </section>
