@@ -3,17 +3,22 @@ import UserMenu from '@/shared/components/UserMenu.vue'
 
 import EditorIcon from '@/features/documents/components/EditorIcon.vue'
 import ExportMenu from '@/features/documents/components/ExportMenu.vue'
+import RecentDocumentsMenu from '@/features/documents/components/RecentDocumentsMenu.vue'
+import type { RecentDocumentRecord } from '@/features/documents/services/recentDocumentStorage'
 
 defineProps<{
   title: string
   isSaving: boolean
   saveStateLabel?: string
   saveStateTone?: 'default' | 'error'
+  currentDocumentId: string
+  recentDocuments: RecentDocumentRecord[]
 }>()
 
 const emit = defineEmits<{
   back: []
   updateTitle: [value: string]
+  openRecentDocument: [id: string]
   preview: []
   save: []
   exportMarkdown: []
@@ -54,6 +59,12 @@ const emit = defineEmits<{
       </div>
 
       <div class="ml-auto flex items-center gap-2">
+        <RecentDocumentsMenu
+          :current-document-id="currentDocumentId"
+          :documents="recentDocuments"
+          @open="emit('openRecentDocument', $event)"
+        />
+
         <ExportMenu @markdown="emit('exportMarkdown')" @pdf="emit('exportPdf')" />
 
         <button

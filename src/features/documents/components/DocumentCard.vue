@@ -1,15 +1,23 @@
 <script setup lang="ts">
+import ActionMenu from '@/features/documents/components/ActionMenu.vue'
 import type { DocumentRecord } from '@/features/documents/services/documentStorage'
 
 defineProps<{
   document: DocumentRecord
   preview: string
   formattedUpdatedAt: string
+  isPinned: boolean
+  isSelectionMode?: boolean
+  isSelected?: boolean
 }>()
 
 const emit = defineEmits<{
   open: [id: string]
+  manageFolders: [id: string]
+  togglePin: [id: string]
+  duplicate: [id: string]
   delete: [id: string]
+  toggleSelection: [id: string]
 }>()
 
 function handleOpen(id: string): void {
@@ -19,18 +27,47 @@ function handleOpen(id: string): void {
 function handleDelete(id: string): void {
   emit('delete', id)
 }
+
+function handleDuplicate(id: string): void {
+  emit('duplicate', id)
+}
+
+function handleManageFolders(id: string): void {
+  emit('manageFolders', id)
+}
+
+function handleTogglePin(id: string): void {
+  emit('togglePin', id)
+}
+
+function handleToggleSelection(id: string): void {
+  emit('toggleSelection', id)
+}
 </script>
 
 <template>
   <article
-    class="group cursor-pointer rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-ring"
+    class="group rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-ring"
+    :class="[
+      isSelectionMode ? 'cursor-default' : 'cursor-pointer',
+      isSelected ? 'border-primary ring-2 ring-primary/20' : '',
+    ]"
     tabindex="0"
-    @click="handleOpen(document.id)"
-    @keydown.enter.prevent="handleOpen(document.id)"
-    @keydown.space.prevent="handleOpen(document.id)"
+    @click="isSelectionMode ? handleToggleSelection(document.id) : handleOpen(document.id)"
+    @keydown.enter.prevent="isSelectionMode ? handleToggleSelection(document.id) : handleOpen(document.id)"
+    @keydown.space.prevent="isSelectionMode ? handleToggleSelection(document.id) : handleOpen(document.id)"
   >
     <div class="mb-3 flex items-start justify-between gap-3">
       <div class="flex min-w-0 flex-1 items-center gap-2">
+        <input
+          v-if="isSelectionMode"
+          :checked="isSelected"
+          type="checkbox"
+          class="size-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+          :aria-label="`Select ${document.name}`"
+          @click.stop
+          @change="handleToggleSelection(document.id)"
+        />
         <svg
           class="size-5 shrink-0 text-primary"
           viewBox="0 0 24 24"
@@ -48,16 +85,9 @@ function handleDelete(id: string): void {
           <path d="M10 9H8" />
         </svg>
         <h3 class="truncate font-semibold">{{ document.name }}</h3>
-      </div>
-
-      <button
-        type="button"
-        class="-mt-1 -mr-1 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
-        aria-label="Delete document"
-        @click.stop="handleDelete(document.id)"
-      >
         <svg
-          class="size-4"
+          v-if="isPinned"
+          class="size-4 shrink-0 text-foreground"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -66,13 +96,34 @@ function handleDelete(id: string): void {
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <path d="M3 6h18" />
-          <path d="M8 6V4h8v2" />
-          <path d="M19 6l-1 14H6L5 6" />
-          <path d="M10 11v6" />
-          <path d="M14 11v6" />
+          <path d="M12 17v5" />
+          <path d="M8 3h8l-1 7 3 2v1H6v-1l3-2-1-7Z" />
         </svg>
-      </button>
+      </div>
+
+      <div
+        v-if="!isSelectionMode"
+        class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+      >
+        <ActionMenu
+          ariaLabel="Document actions"
+          :items="[
+            { id: 'folders', label: 'Manage folders' },
+            { id: 'pin', label: isPinned ? 'Unpin' : 'Pin' },
+            { id: 'duplicate', label: 'Duplicate' },
+            { id: 'delete', label: 'Delete', destructive: true },
+          ]"
+          @select="
+            $event === 'folders'
+              ? handleManageFolders(document.id)
+              : $event === 'pin'
+                ? handleTogglePin(document.id)
+              : $event === 'duplicate'
+                ? handleDuplicate(document.id)
+                : handleDelete(document.id)
+          "
+        />
+      </div>
     </div>
 
     <p class="document-preview mb-3 text-sm text-muted-foreground">
