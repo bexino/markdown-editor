@@ -148,6 +148,7 @@ async function handleCreateFolder(payload: {
   name: string
   documentIds: string[]
   createDocument: boolean
+  documentName: string
 }): Promise<void> {
   feedbackMessage.value = ''
 
@@ -156,7 +157,7 @@ async function handleCreateFolder(payload: {
     await documentFolderStorage.addDocumentsToFolder(folder.id, payload.documentIds)
 
     if (payload.createDocument) {
-      const documentRecord = await documentStorage.create('Untitled Document', defaultContent)
+      const documentRecord = await documentStorage.create(payload.documentName, defaultContent)
       await documentFolderStorage.setFoldersForDocument(documentRecord.id, [folder.id])
     }
 
@@ -172,6 +173,7 @@ async function handleRenameFolder(payload: {
   name: string
   documentIds: string[]
   createDocument: boolean
+  documentName: string
 }): Promise<void> {
   if (!renameFolderId.value) {
     return

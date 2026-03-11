@@ -20,6 +20,7 @@ const emit = defineEmits<{
       name: string
       documentIds: string[]
       createDocument: boolean
+      documentName: string
     },
   ]
 }>()
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 const name = ref('')
 const selectedDocumentIds = ref<string[]>([])
 const createDocument = ref(false)
+const documentName = ref('Untitled Document')
 
 const sortedDocuments = computed(() => {
   return [...(props.documents ?? [])].sort((left, right) => left.name.localeCompare(right.name))
@@ -42,6 +44,7 @@ watch(
     name.value = props.initialName ?? ''
     selectedDocumentIds.value = []
     createDocument.value = false
+    documentName.value = 'Untitled Document'
   },
 )
 
@@ -62,6 +65,7 @@ function handleSubmit(): void {
     name: trimmedName,
     documentIds: selectedDocumentIds.value,
     createDocument: createDocument.value,
+    documentName: documentName.value.trim(),
   })
 }
 </script>
@@ -131,6 +135,17 @@ function handleSubmit(): void {
             />
             <span class="text-sm font-medium">Create a new document in this folder</span>
           </label>
+
+          <label v-if="createDocument" class="block">
+            <span class="mb-2 block text-sm font-medium">Document Name</span>
+            <input
+              v-model="documentName"
+              type="text"
+              placeholder="Untitled Document"
+              class="flex h-10 w-full rounded-md border border-border bg-input-background px-3 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              @keydown.enter.prevent="handleSubmit"
+            />
+          </label>
         </template>
       </div>
 
@@ -145,7 +160,7 @@ function handleSubmit(): void {
         <button
           type="button"
           class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="!name.trim()"
+          :disabled="!name.trim() || (createDocument && !documentName.trim())"
           @click="handleSubmit"
         >
           {{ confirmLabel }}
