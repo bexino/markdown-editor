@@ -5,7 +5,7 @@ export interface RecentDocumentRecord {
 }
 
 const STORAGE_KEY = 'markdown-editor.recent-documents'
-const MAX_RECENT_DOCUMENTS = 6
+const MAX_RECENT_DOCUMENTS = 3
 
 function canUseLocalStorage(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
