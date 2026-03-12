@@ -9,6 +9,7 @@ import RegisterView from '@/features/auth/pages/RegisterPage.vue'
 import ResetPasswordView from '@/features/auth/pages/ResetPasswordPage.vue'
 import SignInView from '@/features/auth/pages/SignInPage.vue'
 import LandingView from '@/features/landing/pages/LandingPage.vue'
+import ForbiddenView from '@/shared/pages/ForbiddenPage.vue'
 import NotFoundView from '@/shared/pages/NotFoundPage.vue'
 
 const router = createRouter({
@@ -63,6 +64,11 @@ const router = createRouter({
       path: '/auth/reset-password',
       name: 'reset-password',
       component: ResetPasswordView,
+    },
+    {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: ForbiddenView,
     },
     {
       path: '/:pathMatch(.*)*',
