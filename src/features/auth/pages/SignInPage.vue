@@ -1,5 +1,15 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
 import SignInCard from '@/features/auth/components/SignInCard.vue'
+import { guestAuth } from '@/shared/lib/guestAuth'
+
+const router = useRouter()
+
+async function enterGuestMode(): Promise<void> {
+  guestAuth.loginAsGuest()
+  await router.push('/documents')
+}
 </script>
 
 <template>
@@ -35,6 +45,16 @@ import SignInCard from '@/features/auth/components/SignInCard.vue'
       <SignInCard />
 
       <div class="mt-4 text-center">
+        <button
+          type="button"
+          class="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          @click="enterGuestMode"
+        >
+          Continue as Guest
+        </button>
+      </div>
+
+      <div class="mt-2 text-center">
         <RouterLink
           to="/"
           class="text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"

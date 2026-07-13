@@ -5,6 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getCurrentUser, logout } from '@/shared/lib/auth'
+import { guestAuth } from '@/shared/lib/guestAuth'
 import { getUserDisplayName, getUserInitials } from '@/features/profile/lib/userProfile'
 import { theme, toggleTheme } from '@/shared/services/theme'
 
@@ -15,11 +16,21 @@ const isLoading = ref(false)
 const user = ref<User | null>(null)
 const menuRoot = ref<HTMLElement | null>(null)
 
+const isGuest = computed(() => guestAuth.isGuest())
+
 const userName = computed(() => {
+  if (isGuest.value) {
+    return 'Guest'
+  }
+
   return getUserDisplayName(user.value)
 })
 
 const initials = computed(() => {
+  if (isGuest.value) {
+    return 'G'
+  }
+
   return getUserInitials(user.value)
 })
 
@@ -95,7 +106,8 @@ onBeforeUnmount(() => {
       <div class="px-2 py-2.5">
         <div class="flex flex-col gap-1">
           <p class="font-medium">{{ userName }}</p>
-          <p class="text-xs text-muted-foreground">{{ user.email }}</p>
+          <p v-if="!isGuest" class="text-xs text-muted-foreground">{{ user?.email }}</p>
+          <p v-else class="text-xs text-muted-foreground">Data saved locally</p>
         </div>
       </div>
 
@@ -127,6 +139,7 @@ onBeforeUnmount(() => {
       </button>
 
       <button
+        v-if="!isGuest"
         type="button"
         class="flex w-full cursor-pointer items-center rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
         role="menuitem"
@@ -214,7 +227,7 @@ onBeforeUnmount(() => {
           <path d="M4 16h12" />
           <path d="M20 3v18" />
         </svg>
-        {{ isLoading ? 'Logging Out...' : 'Log Out' }}
+        {{ isLoading ? 'Logging Out...' : isGuest ? 'Exit Guest Mode' : 'Log Out' }}
       </button>
     </div>
   </div>

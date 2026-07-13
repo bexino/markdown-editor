@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/shared/lib/auth'
+import { guestAuth, guestFolderStorage } from '@/shared/lib/guestAuth'
 import { supabase } from '@/shared/services/supabase'
 
 export interface FolderRecord {
@@ -36,9 +37,13 @@ async function requireUserId(): Promise<string> {
 
 export const folderStorage = {
   async getAll(): Promise<FolderRecord[]> {
+    if (guestAuth.isGuest()) {
+      return guestFolderStorage.getAll()
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('folders')
       .select('id, name, created_at, updated_at')
       .order('created_at', { ascending: true })
@@ -50,9 +55,13 @@ export const folderStorage = {
     return (data ?? []).map(mapFolderRow)
   },
   async getById(id: string): Promise<FolderRecord | null> {
+    if (guestAuth.isGuest()) {
+      return guestFolderStorage.getById(id)
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('folders')
       .select('id, name, created_at, updated_at')
       .eq('id', id)
@@ -65,9 +74,13 @@ export const folderStorage = {
     return data ? mapFolderRow(data) : null
   },
   async create(name: string): Promise<FolderRecord> {
+    if (guestAuth.isGuest()) {
+      return guestFolderStorage.create(name)
+    }
+
     const userId = await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('folders')
       .insert({
         user_id: userId,
@@ -83,9 +96,13 @@ export const folderStorage = {
     return mapFolderRow(data)
   },
   async update(id: string, input: { name: string }): Promise<FolderRecord> {
+    if (guestAuth.isGuest()) {
+      return guestFolderStorage.update(id, input)
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('folders')
       .update({
         name: input.name,
@@ -101,9 +118,14 @@ export const folderStorage = {
     return mapFolderRow(data)
   },
   async delete(id: string): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestFolderStorage.delete(id)
+      return
+    }
+
     await requireUserId()
 
-    const { error } = await supabase.from('folders').delete().eq('id', id)
+    const { error } = await supabase!.from('folders').delete().eq('id', id)
 
     if (error) {
       throw new Error(error.message)

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
 import UserMenu from '@/shared/components/UserMenu.vue'
 import ChangePasswordDialog from '@/features/profile/components/ChangePasswordDialog.vue'
 import DeleteAccountDialog from '@/features/profile/components/DeleteAccountDialog.vue'
@@ -9,6 +12,15 @@ import ProfileFeedbackBanner from '@/features/profile/components/ProfileFeedback
 import ProfileSecuritySection from '@/features/profile/components/ProfileSecuritySection.vue'
 import ProfileSummaryCard from '@/features/profile/components/ProfileSummaryCard.vue'
 import { useProfileSettings } from '@/features/profile/composables/useProfileSettings'
+import { guestAuth } from '@/shared/lib/guestAuth'
+
+const router = useRouter()
+
+onMounted(() => {
+  if (guestAuth.isGuest()) {
+    void router.replace('/documents')
+  }
+})
 
 const {
   closeDeleteDialog,

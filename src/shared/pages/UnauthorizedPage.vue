@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+
+import { guestAuth } from '@/shared/lib/guestAuth'
 
 const route = useRoute()
+const router = useRouter()
 
 const attemptedPath = computed(() => {
   const redirect =
@@ -12,6 +15,13 @@ const attemptedPath = computed(() => {
 
   return redirect.trim().length > 0 ? redirect : '/'
 })
+
+async function enterGuestMode(): Promise<void> {
+  guestAuth.loginAsGuest()
+  const redirectPath =
+    typeof route.query.redirect === 'string' ? route.query.redirect : '/documents'
+  await router.push(redirectPath)
+}
 </script>
 
 <template>
@@ -61,7 +71,8 @@ const attemptedPath = computed(() => {
                 You need to sign in to continue.
               </h1>
               <p class="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                This route requires an authenticated session. Sign in to access your documents, preview protected content, or return to the public areas of the application.
+                This route requires an authenticated session. Sign in to access your documents,
+                preview protected content, or return to the public areas of the application.
               </p>
             </div>
 
@@ -78,6 +89,13 @@ const attemptedPath = computed(() => {
               >
                 Create account
               </RouterLink>
+              <button
+                type="button"
+                class="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-dashed border-muted-foreground/50 bg-muted/30 px-5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                @click="enterGuestMode"
+              >
+                Continue as Guest
+              </button>
               <RouterLink
                 to="/"
                 class="inline-flex min-h-11 items-center justify-center rounded-xl border border-border/70 bg-card px-5 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"

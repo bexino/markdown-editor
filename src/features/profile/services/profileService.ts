@@ -25,7 +25,9 @@ export async function updateProfile(user: User, formData: ProfileFormData): Prom
     throw new Error('Please fill in all fields.')
   }
 
-  const attributes: Parameters<typeof supabase.auth.updateUser>[0] = {
+  const supabaseClient = supabase!
+
+  const attributes: Parameters<typeof supabaseClient.auth.updateUser>[0] = {
     data: {
       ...user.user_metadata,
       full_name: name,
@@ -36,12 +38,9 @@ export async function updateProfile(user: User, formData: ProfileFormData): Prom
     attributes.email = email
   }
 
-  const { data, error } = await supabase.auth.updateUser(
-    attributes,
-    {
-      emailRedirectTo: getAuthCallbackUrl(),
-    }
-  )
+  const { data, error } = await supabaseClient.auth.updateUser(attributes, {
+    emailRedirectTo: getAuthCallbackUrl(),
+  })
 
   if (error) {
     throw new Error(error.message)
@@ -55,7 +54,7 @@ export async function updateProfile(user: User, formData: ProfileFormData): Prom
 }
 
 export async function cancelPendingEmailChange(
-  payload: CancelPendingEmailChangePayload
+  payload: CancelPendingEmailChangePayload,
 ): Promise<User> {
   const email = payload.email.trim().toLowerCase()
 
@@ -66,14 +65,16 @@ export async function cancelPendingEmailChange(
   const {
     data: { session },
     error: sessionError,
-  } = await supabase.auth.getSession()
+  } = await supabase!.auth.getSession()
 
   if (sessionError) {
     throw new Error(sessionError.message)
   }
 
   if (!session?.access_token) {
-    throw new Error('Your session expired. Sign in again before canceling the pending email change.')
+    throw new Error(
+      'Your session expired. Sign in again before canceling the pending email change.',
+    )
   }
 
   const response = await fetch(
@@ -86,7 +87,7 @@ export async function cancelPendingEmailChange(
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ email }),
-    }
+    },
   )
 
   let data: { error?: string } | null = null
@@ -100,7 +101,7 @@ export async function cancelPendingEmailChange(
   if (!response.ok) {
     throw new Error(
       data?.error ??
-        'The cancel email change function returned an unexpected response. Check the Edge Function logs and environment variables.'
+        'The cancel email change function returned an unexpected response. Check the Edge Function logs and environment variables.',
     )
   }
 
@@ -108,7 +109,7 @@ export async function cancelPendingEmailChange(
     throw new Error(data.error)
   }
 
-  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+  const { data: refreshData, error: refreshError } = await supabase!.auth.refreshSession()
 
   if (refreshError) {
     throw new Error(refreshError.message)
@@ -121,7 +122,7 @@ export async function cancelPendingEmailChange(
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser()
+  } = await supabase!.auth.getUser()
 
   if (userError) {
     throw new Error(userError.message)
@@ -147,7 +148,7 @@ export async function changePassword(formData: PasswordFormData): Promise<void> 
     throw new Error('New passwords do not match.')
   }
 
-  const { error } = await supabase.auth.updateUser({
+  const { error } = await supabase!.auth.updateUser({
     password: formData.newPassword,
     current_password: formData.currentPassword,
   })

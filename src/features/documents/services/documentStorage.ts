@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/shared/lib/auth'
+import { guestAuth, guestDocumentStorage } from '@/shared/lib/guestAuth'
 import { supabase } from '@/shared/services/supabase'
 
 export interface DocumentRecord {
@@ -43,9 +44,13 @@ async function requireUserId(): Promise<string> {
 
 export const documentStorage = {
   async getAll(): Promise<DocumentRecord[]> {
+    if (guestAuth.isGuest()) {
+      return guestDocumentStorage.getAll()
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('documents')
       .select('id, title, content, created_at, updated_at')
       .order('updated_at', { ascending: false })
@@ -57,9 +62,13 @@ export const documentStorage = {
     return (data ?? []).map(mapDocumentRow)
   },
   async getById(id: string): Promise<DocumentRecord | null> {
+    if (guestAuth.isGuest()) {
+      return guestDocumentStorage.getById(id)
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('documents')
       .select('id, title, content, created_at, updated_at')
       .eq('id', id)
@@ -72,9 +81,13 @@ export const documentStorage = {
     return data ? mapDocumentRow(data) : null
   },
   async create(name: string, content: string): Promise<DocumentRecord> {
+    if (guestAuth.isGuest()) {
+      return guestDocumentStorage.create(name, content)
+    }
+
     const userId = await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('documents')
       .insert({
         user_id: userId,
@@ -106,9 +119,13 @@ export const documentStorage = {
       content: string
     },
   ): Promise<DocumentRecord> {
+    if (guestAuth.isGuest()) {
+      return guestDocumentStorage.update(id, input)
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('documents')
       .update({
         title: input.name,
@@ -125,9 +142,14 @@ export const documentStorage = {
     return mapDocumentRow(data)
   },
   async delete(id: string): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestDocumentStorage.delete(id)
+      return
+    }
+
     await requireUserId()
 
-    const { error } = await supabase.from('documents').delete().eq('id', id)
+    const { error } = await supabase!.from('documents').delete().eq('id', id)
 
     if (error) {
       throw new Error(error.message)

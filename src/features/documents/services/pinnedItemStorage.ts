@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/shared/lib/auth'
+import { guestAuth, guestPinnedStorage } from '@/shared/lib/guestAuth'
 import { supabase } from '@/shared/services/supabase'
 
 interface PinnedItemRow {
@@ -43,9 +44,13 @@ function mapPinnedItems(rows: PinnedItemRow[]): PinnedItemsRecord {
 
 export const pinnedItemStorage = {
   async getAll(): Promise<PinnedItemsRecord> {
+    if (guestAuth.isGuest()) {
+      return guestPinnedStorage.getAll()
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase.from('pinned_items').select('document_id, folder_id')
+    const { data, error } = await supabase!.from('pinned_items').select('document_id, folder_id')
 
     if (error) {
       throw new Error(error.message)
@@ -54,9 +59,14 @@ export const pinnedItemStorage = {
     return mapPinnedItems((data ?? []) as PinnedItemRow[])
   },
   async pinDocument(documentId: string): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestPinnedStorage.pinDocument(documentId)
+      return
+    }
+
     const userId = await requireUserId()
 
-    const { data, error: existingError } = await supabase
+    const { data, error: existingError } = await supabase!
       .from('pinned_items')
       .select('document_id')
       .eq('user_id', userId)
@@ -72,7 +82,7 @@ export const pinnedItemStorage = {
       return
     }
 
-    const { error } = await supabase.from('pinned_items').insert({
+    const { error } = await supabase!.from('pinned_items').insert({
       user_id: userId,
       document_id: documentId,
       folder_id: null,
@@ -83,9 +93,14 @@ export const pinnedItemStorage = {
     }
   },
   async unpinDocument(documentId: string): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestPinnedStorage.unpinDocument(documentId)
+      return
+    }
+
     await requireUserId()
 
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('pinned_items')
       .delete()
       .eq('document_id', documentId)
@@ -96,9 +111,14 @@ export const pinnedItemStorage = {
     }
   },
   async pinFolder(folderId: string): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestPinnedStorage.pinFolder(folderId)
+      return
+    }
+
     const userId = await requireUserId()
 
-    const { data, error: existingError } = await supabase
+    const { data, error: existingError } = await supabase!
       .from('pinned_items')
       .select('folder_id')
       .eq('user_id', userId)
@@ -114,7 +134,7 @@ export const pinnedItemStorage = {
       return
     }
 
-    const { error } = await supabase.from('pinned_items').insert({
+    const { error } = await supabase!.from('pinned_items').insert({
       user_id: userId,
       document_id: null,
       folder_id: folderId,
@@ -125,9 +145,14 @@ export const pinnedItemStorage = {
     }
   },
   async unpinFolder(folderId: string): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestPinnedStorage.unpinFolder(folderId)
+      return
+    }
+
     await requireUserId()
 
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('pinned_items')
       .delete()
       .eq('folder_id', folderId)

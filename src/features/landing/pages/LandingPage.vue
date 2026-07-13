@@ -6,20 +6,24 @@ import FeatureCard from '@/features/landing/components/FeatureCard.vue'
 import LandingBenefitMockup from '@/features/landing/components/LandingBenefitMockup.vue'
 import LandingEditorMockup from '@/features/landing/components/LandingEditorMockup.vue'
 import { benefits, featureCards } from '@/features/landing/data/landing'
+import { guestAuth } from '@/shared/lib/guestAuth'
 
 const router = useRouter()
 
 async function navigateTo(path: string): Promise<void> {
   await router.push(path)
 }
+
+async function enterGuestMode(): Promise<void> {
+  guestAuth.loginAsGuest()
+  await router.push('/documents')
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground">
     <header class="sticky top-0 z-50 border-b bg-card/50 backdrop-blur-sm">
-      <div
-        class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
-      >
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-2">
           <svg
             class="size-8 text-primary"
@@ -67,7 +71,8 @@ async function navigateTo(path: string): Promise<void> {
           Write and preview Markdown in real time
         </h1>
         <p class="mb-8 text-lg text-muted-foreground md:text-xl">
-          A Markdown editor for creating, editing, and previewing documents with live rendering and syntax highlighting.
+          A Markdown editor for creating, editing, and previewing documents with live rendering and
+          syntax highlighting.
         </p>
         <div class="flex flex-wrap justify-center gap-4">
           <button
@@ -96,6 +101,13 @@ async function navigateTo(path: string): Promise<void> {
             @click="navigateTo('/signin')"
           >
             Sign In
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-11 cursor-pointer items-center justify-center rounded-md border border-dashed border-muted-foreground/50 bg-muted/30 px-6 py-3 text-base font-medium text-muted-foreground transition-colors hover:border-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            @click="enterGuestMode"
+          >
+            Guest Mode
           </button>
         </div>
       </div>
@@ -131,7 +143,9 @@ async function navigateTo(path: string): Promise<void> {
                 stroke-linejoin="round"
                 aria-hidden="true"
               >
-                <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                <path
+                  d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+                />
                 <circle cx="12" cy="12" r="3" />
               </svg>
               <svg
@@ -296,7 +310,9 @@ async function navigateTo(path: string): Promise<void> {
             </a>
             . All rights reserved.
           </p>
-          <div class="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
+          <div
+            class="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground"
+          >
             <a
               href="https://www.giliannereyes.com/"
               target="_blank"

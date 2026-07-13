@@ -56,11 +56,12 @@ async function initializeRecoveryState(): Promise<void> {
 }
 
 onMounted(async () => {
-  subscription = onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY' && session) {
-      recoveryState.value = 'ready'
-    }
-  })
+  subscription =
+    onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        recoveryState.value = 'ready'
+      }
+    }) ?? undefined
 
   await initializeRecoveryState()
 })
@@ -107,7 +108,10 @@ onUnmounted(() => {
         class="rounded-xl border border-border bg-card p-8 text-center text-card-foreground shadow-sm"
       >
         <div class="space-y-4">
-          <div :class="statusIconClassName" class="mx-auto flex size-12 items-center justify-center rounded-full">
+          <div
+            :class="statusIconClassName"
+            class="mx-auto flex size-12 items-center justify-center rounded-full"
+          >
             <svg
               v-if="recoveryState === 'error'"
               class="size-6"

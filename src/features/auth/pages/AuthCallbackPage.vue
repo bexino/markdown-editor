@@ -47,15 +47,16 @@ async function completeVerification(): Promise<void> {
 }
 
 onMounted(async () => {
-  subscription = onAuthStateChange((event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-      verificationState.value = 'success'
-      message.value = 'Your email has been verified. Redirecting to your documents...'
-      redirectTimeoutId = window.setTimeout(() => {
-        router.push('/documents')
-      }, 1500)
-    }
-  })
+  subscription =
+    onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        verificationState.value = 'success'
+        message.value = 'Your email has been verified. Redirecting to your documents...'
+        redirectTimeoutId = window.setTimeout(() => {
+          router.push('/documents')
+        }, 1500)
+      }
+    }) ?? undefined
 
   await completeVerification()
 })
@@ -73,7 +74,9 @@ onUnmounted(() => {
   <main
     class="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/20 px-4 py-10 text-foreground"
   >
-    <section class="w-full max-w-md rounded-xl border border-border bg-card p-8 text-card-foreground shadow-sm">
+    <section
+      class="w-full max-w-md rounded-xl border border-border bg-card p-8 text-card-foreground shadow-sm"
+    >
       <div class="space-y-4 text-center">
         <div
           class="mx-auto flex size-12 items-center justify-center rounded-full"

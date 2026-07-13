@@ -7,6 +7,7 @@ import type {
 } from '@supabase/supabase-js'
 
 import { supabase } from '@/shared/services/supabase'
+import { guestAuth } from '@/shared/lib/guestAuth'
 
 export interface AuthCredentials {
   email: string
@@ -46,6 +47,10 @@ export async function register({
   username,
   options,
 }: RegisterCredentials): Promise<AuthResponse> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.')
+  }
+
   return supabase.auth.signUp({
     email,
     password,
@@ -60,6 +65,10 @@ export async function register({
 }
 
 export async function login({ email, password }: AuthCredentials): Promise<AuthResponse> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.')
+  }
+
   return supabase.auth.signInWithPassword({
     email,
     password,
@@ -67,6 +76,10 @@ export async function login({ email, password }: AuthCredentials): Promise<AuthR
 }
 
 export async function requestPasswordReset(email: string): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.')
+  }
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: getPasswordResetCallbackUrl(),
   })
@@ -75,6 +88,10 @@ export async function requestPasswordReset(email: string): Promise<{ error: Erro
 }
 
 export async function updatePassword(password: string): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.')
+  }
+
   const { error } = await supabase.auth.updateUser({
     password,
   })
@@ -83,12 +100,29 @@ export async function updatePassword(password: string): Promise<{ error: Error |
 }
 
 export async function logout(): Promise<{ error: Error | null }> {
+  if (guestAuth.isGuest()) {
+    guestAuth.logout()
+    return { error: null }
+  }
+
+  if (!supabase) {
+    return { error: null }
+  }
+
   const { error } = await supabase.auth.signOut()
 
   return { error }
 }
 
 export async function getSession(): Promise<Session | null> {
+  if (guestAuth.isGuest()) {
+    return guestAuth.getFakeSession()
+  }
+
+  if (!supabase) {
+    return null
+  }
+
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -97,6 +131,14 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
+  if (guestAuth.isGuest()) {
+    return guestAuth.getUser() as unknown as User
+  }
+
+  if (!supabase) {
+    return null
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -104,7 +146,11 @@ export async function getCurrentUser(): Promise<User | null> {
   return user
 }
 
-export function onAuthStateChange(callback: AuthStateChangeCallback): Subscription {
+export function onAuthStateChange(callback: AuthStateChangeCallback): Subscription | null {
+  if (!supabase) {
+    return null
+  }
+
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange(callback)

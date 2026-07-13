@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/shared/lib/auth'
+import { guestAuth, guestFolderDocStorage } from '@/shared/lib/guestAuth'
 import { supabase } from '@/shared/services/supabase'
 
 import type { DocumentRecord } from '@/features/documents/services/documentStorage'
@@ -38,9 +39,13 @@ async function requireUserId(): Promise<string> {
 
 export const documentFolderStorage = {
   async getFolderIdsByDocumentId(documentId: string): Promise<string[]> {
+    if (guestAuth.isGuest()) {
+      return guestFolderDocStorage.getFolderIdsByDocumentId(documentId)
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('folder_documents')
       .select('folder_id')
       .eq('document_id', documentId)
@@ -52,13 +57,17 @@ export const documentFolderStorage = {
     return (data ?? []).map((row: Pick<DocumentFolderRow, 'folder_id'>) => row.folder_id)
   },
   async getFolderIdsByDocumentIds(documentIds: string[]): Promise<Record<string, string[]>> {
+    if (guestAuth.isGuest()) {
+      return guestFolderDocStorage.getFolderIdsByDocumentIds(documentIds)
+    }
+
     await requireUserId()
 
     if (documentIds.length === 0) {
       return {}
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('folder_documents')
       .select('folder_id, document_id')
       .in('document_id', documentIds)
@@ -73,9 +82,13 @@ export const documentFolderStorage = {
     }, {})
   },
   async getDocumentsByFolderId(folderId: string): Promise<DocumentRecord[]> {
+    if (guestAuth.isGuest()) {
+      return guestFolderDocStorage.getDocumentsByFolderId(folderId)
+    }
+
     await requireUserId()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('documents')
       .select('id, title, content, created_at, updated_at, folder_documents!inner(folder_id)')
       .eq('folder_documents.folder_id', folderId)
@@ -88,13 +101,18 @@ export const documentFolderStorage = {
     return (data ?? []).map((row) => mapDocumentRow(row as FolderDocumentJoinedRow))
   },
   async addDocumentsToFolder(folderId: string, documentIds: string[]): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestFolderDocStorage.addDocumentsToFolder(folderId, documentIds)
+      return
+    }
+
     await requireUserId()
 
     if (documentIds.length === 0) {
       return
     }
 
-    const { error } = await supabase.from('folder_documents').upsert(
+    const { error } = await supabase!.from('folder_documents').upsert(
       documentIds.map((documentId) => ({
         folder_id: folderId,
         document_id: documentId,
@@ -110,9 +128,14 @@ export const documentFolderStorage = {
     }
   },
   async setFoldersForDocument(documentId: string, folderIds: string[]): Promise<void> {
+    if (guestAuth.isGuest()) {
+      guestFolderDocStorage.setFoldersForDocument(documentId, folderIds)
+      return
+    }
+
     await requireUserId()
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabase!
       .from('folder_documents')
       .delete()
       .eq('document_id', documentId)
@@ -125,7 +148,7 @@ export const documentFolderStorage = {
       return
     }
 
-    const { error: insertError } = await supabase.from('folder_documents').insert(
+    const { error: insertError } = await supabase!.from('folder_documents').insert(
       folderIds.map((folderId) => ({
         folder_id: folderId,
         document_id: documentId,
