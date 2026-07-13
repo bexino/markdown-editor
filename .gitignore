@@ -39,6 +39,7 @@ __screenshots__/
 # Vite
 *.timestamp-*-*.mjs
 
+AGENTS.md
 agents.md 
 .env
 /supabase/.temp
